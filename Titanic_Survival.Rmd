@@ -414,7 +414,7 @@ linmod=lm(SurvivedNum~FareLog,data=train)
 abline(linmod, col="green", lwd=1, lty=2)
 g=glm(SurvivedNum~FareLog,family='binomial',data=train)
 curve(predict(g,data.frame(FareLog=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(200,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 ```
 
 
