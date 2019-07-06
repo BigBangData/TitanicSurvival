@@ -1,5 +1,5 @@
 ---
-title: "Titanic_Survival"
+title: "Titanic Survival Part 1: EDA in R"
 author: "Marcelo Sanches"
 date: "July 4, 2019"
 output: html_document
@@ -9,12 +9,25 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+# Contents
 
-# Titanic Surival
 
-## Part 1: Initial Exploratory Data Analysis in R
+[LIST CONTENTS]
 
-I will explore the Kaggle Titanic train dataset in R, performing pre-processing as needed which later will be copied into a Python script that succintly performs all essential pre-processing and no EDA. 
+---
+
+# Summary
+
+[EXPLAIN PROJECT]
+
+In Part 1 of the Titanic Survival project I conduct **Exploratory Data Analisys (EDA)** of the [Kaggle Titanic train dataset](https://www.kaggle.com/c/titanic/data) in RStudio, through summary tables and visualizations, performing minor pre-processing as needed. 
+
+In Part 2 of the project I intend to write a Python script that succintly performs all essential pre-processing steps, emulating a production environment. 
+
+
+---
+
+# 1. Basic EDA
 
 First we load the training data. We will not look at the test data until it is time to test; failing to do so would consist in *data snooping*. In the spirit of the Titanic Kaggle kernel, I added the Kaggle Titanic datasets a level up on an `input/` directory.
 
@@ -23,7 +36,6 @@ First we load the training data. We will not look at the test data until it is t
 rm(list=ls())
 train <- read.csv("../input/train.csv", na.strings="")
 ```
-
 
 Basic EDA consists of looking at the dataset's structure, summary, top rows, and bottom rows:
 
@@ -83,7 +95,9 @@ tail(train)
 
 EDA also consists of plotting, but before that we should cleanup a bit our messy data, since plotting `Name` and `Ticket` as they are would be useless, for example. 
 
-### Preliminary Data Cleaning
+---
+
+# 2. Preliminary Data Cleaning
 
 * Cleaning up Name
 
@@ -146,7 +160,6 @@ train$Name <- NULL
 ```
 
 
-
 * Cleaning up Ticket
 
 ```{r}
@@ -201,20 +214,20 @@ for (i in 1:nrow(train)) {
 }
 # recategorizing manually, letters higher than F are binned into the F level
 for (i in 1:nrow(train)) {
-train$CabinClean[i] <- ifelse(train$CabinClean[i] == "B51 B53 B", "B",
-					 ifelse(train$CabinClean[i] == "B57 B59 B63 B", "B",
-					 ifelse(train$CabinClean[i] == "B58 B", "B",
-					 ifelse(train$CabinClean[i] == "B82 B", "B",
-					 ifelse(train$CabinClean[i] == "B96 B", "B",
-					 ifelse(train$CabinClean[i] == "C22 C", "C",
-					 ifelse(train$CabinClean[i] == "C23 C25 C", "C",						 
-					 ifelse(train$CabinClean[i] == "C62 C", "C",	
-					 ifelse(train$CabinClean[i] == "D10 D", "D",
-					 ifelse(train$CabinClean[i] == "F E", "F",
-					 ifelse(train$CabinClean[i] == "F G", "F",
-					 ifelse(train$CabinClean[i] == "G", "F",
-					 ifelse(train$CabinClean[i] == "T", "F",
-					 train$CabinClean[i])))))))))))))
+train$CabinClean[i] <- ifelse(train$CabinClean[i] == "B51 B53 B" | 
+                              train$CabinClean[i] == "B57 B59 B63 B" | 
+                              train$CabinClean[i] == "B58 B" | 
+					                    train$CabinClean[i] == "B82 B" | 
+					                    train$CabinClean[i] == "B96 B", "B",
+					             ifelse(train$CabinClean[i] == "C22 C" | 
+					                    train$CabinClean[i] == "C23 C25 C" | 
+					                    train$CabinClean[i] == "C62 C", "C",						
+					             ifelse(train$CabinClean[i] == "D10 D", "D",
+					             ifelse(train$CabinClean[i] == "F E"| 
+					                    train$CabinClean[i] == "F G" | 
+					                    train$CabinClean[i] == "G" | 
+					                    train$CabinClean[i] == "T", "F",
+					             train$CabinClean[i]))))
 }
 # replace old Cabin
 train$Cabin <- factor(train$CabinClean)
@@ -224,12 +237,14 @@ summary(train$Cabin)
 
 We now have good representations in all cabins and not too many levels but still a lot of missing values, we'll deal with those later as needed.
 
+---
 
-## Part 2: Graphical Exploratory Data Analysis
+# 3. Graphical Exploratory Data Analysis
 
 Now that we have the data in a basic shape for graphical EDA, we can try understanding the underlying distributions and associations of this training set better, remembering that this is just a sample so our findings are not necessarily representative of the truth, albeit in our case the sample is quite large, but I am always careful about making strong conclusions about a population when using sample data.
 
-### Univariate EDA
+
+## Univariate EDA
 
 In this section we look at feature distributions one at a time. A few quick plots of the class imbalances in Survived, Passenger Class, and Sex give us a better understanding of these attributes:
 
@@ -283,8 +298,9 @@ barplot(counts, main="Number of Siblings/Spouses vs Parents/Children",
 
 Since the distributions are similarly skewed, we could potentially combine the Siblings/Spouse and Parents/Children attributes into a single "Number of Relatives" attribute.
 
+---
 
-### Bivariate EDA 
+## Bivariate EDA 
 
 
 Looking at our variables again:
@@ -311,7 +327,7 @@ plot(train[,colnames(train) %in% chosen])
 Notice how numerical attributes (`Age` and `Fare`) combine well into a scatterplot, yet other attributes are not plotted exactly as we might want. Since the problem space will only increase with higher-dimensional combinations, we select only a few choice pairs to consider. One approach is to compare each of the other ten features with our `Survived` outcome.
 
 
-### Interactions with Survival
+## Interactions with Survival
 
 * 1 Survived & Pclass
 
@@ -493,14 +509,15 @@ linmod=lm(SurvivedNum~NameLength,data=train)
 abline(linmod, col="green", lwd=1, lty=2)
 g=glm(SurvivedNum~NameLength,family='binomial',data=train)
 curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(200,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 ```
 
 
 Longer names do appear to have some association with higher probabilities of survival so we are also keeping this feature. It might just be capturing the association of longer names and wealth, but since in machine learning we do not care about multicollinearity issues, we will test whether to keep this attribute or not during our feature selection modeling phase.
 
+---
 
-### Multi-dimensional EDA
+## Multi-dimensional EDA
 
 The higher-dimensional problem space of combinations with 11 variables is as follows:
 
@@ -518,7 +535,7 @@ The number of combinations is complementary (adding up to 11): 6 = 5, 7 = 4, etc
 Of the 165 trivariate combinations, 45 alone are possibilities that interact with our outcome `Survival` -- clearly too many to consider, so our approach will by means of necessity be minimal and select, but I wanted to make the size of the entire enterprise known.
 
 
-### Age Categories and Imputation
+## Age Categories and Imputation
 
 To make matters worse, I am breaking down the `Age` continuous variable into four new features by age group: `Child` ($0-12$) `Teen` ($13-19$), `YoungAdult` ($20-35$), `MiddleAged` ($36-55$), and `Elderly` ($56-80$). While some of these age groups might seem young by 2019's standards, at the time of the Titanic's maiden voyage, I believe they more accurately reflect the respective age groups, as evidenced by the distribution below. This breakdown will help later with machine learning but also help EDA in exploring age groups in a discrete manner. 
 
@@ -558,6 +575,7 @@ library(tree)
 
 
 
+---
 
 
 

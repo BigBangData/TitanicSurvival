@@ -8,7 +8,6 @@ The goals of this repository are:
 4. Predict Survival in the Titanic disaster using Kaggle's Titanic test set and the custom Python ML pipeline.
 
 To Do:
-* Fix legend in 'Survival by Name Length' plot
-* Create PDF output as well
+
 
 
