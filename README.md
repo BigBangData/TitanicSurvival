@@ -11,7 +11,7 @@ To Do:
 * List Contents
 * Write Summary
 * Finish Multivariate EDA 
-
+* Revise EDA with production in mind: Ex. ReGex isn't production-ready for test set (too many hard-coded rules).
 
 
 
