@@ -550,31 +550,28 @@ ship hit the iceberg.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# removing ending digits }
 \NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"character"}\NormalTok{, }\KeywordTok{nrow}\NormalTok{(train))}
 \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
-\NormalTok{    pattern <-}\StringTok{ "[0-9]+$"}
-\NormalTok{    m <-}\StringTok{ }\KeywordTok{regexec}\NormalTok{(pattern, train}\OperatorTok{$}\NormalTok{Cabin[i])}
-\NormalTok{    digits <-}\StringTok{ }\KeywordTok{regmatches}\NormalTok{(train}\OperatorTok{$}\NormalTok{Cabin[i], m)}
-\NormalTok{    train}\OperatorTok{$}\NormalTok{CabinClean[i] <-}\StringTok{ }\KeywordTok{trimws}\NormalTok{(}\KeywordTok{sub}\NormalTok{(digits, }\StringTok{""}\NormalTok{, train}\OperatorTok{$}\NormalTok{Cabin[i]), }\DataTypeTok{which=}\StringTok{"right"}\NormalTok{)}
+  \CommentTok{# ID digits and white space}
+\NormalTok{    pattern <-}\StringTok{ "[0-9]*|}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{s"}
+  \CommentTok{# reduce to only first letter given multiple cabins}
+\NormalTok{    train}\OperatorTok{$}\NormalTok{CabinClean[i] <-}\StringTok{ }\KeywordTok{substr}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(pattern, }\StringTok{""}\NormalTok{, train}\OperatorTok{$}\NormalTok{Cabin[i]),}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{)}
+    \CommentTok{# bin letters higher than F to the F category}
+\NormalTok{    high_cabins <-}\StringTok{ }\KeywordTok{toupper}\NormalTok{(letters[letters }\OperatorTok{>}\StringTok{"f"}\NormalTok{])}
+    \ControlFlowTok{if}\NormalTok{ (train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{high_cabins) train}\OperatorTok{$}\NormalTok{CabinClean[i] <-}\StringTok{ "F"}
 \NormalTok{\}}
-\CommentTok{# recategorizing manually, letters higher than F are binned into the F level}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
-\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "B51 B53 B"} \OperatorTok{|}\StringTok{ }
-\StringTok{                              }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "B57 B59 B63 B"} \OperatorTok{|}\StringTok{ }
-\StringTok{                              }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "B58 B"} \OperatorTok{|}\StringTok{ }
-\StringTok{                                        }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "B82 B"} \OperatorTok{|}\StringTok{ }
-\StringTok{                                        }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "B96 B"}\NormalTok{, }\StringTok{"B"}\NormalTok{,}
-                                 \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "C22 C"} \OperatorTok{|}\StringTok{ }
-\StringTok{                                        }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "C23 C25 C"} \OperatorTok{|}\StringTok{ }
-\StringTok{                                        }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "C62 C"}\NormalTok{, }\StringTok{"C"}\NormalTok{,                        }
-                                 \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "D10 D"}\NormalTok{, }\StringTok{"D"}\NormalTok{,}
-                                 \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "F E"}\OperatorTok{|}\StringTok{ }
-\StringTok{                                        }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "F G"} \OperatorTok{|}\StringTok{ }
-\StringTok{                                        }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "G"} \OperatorTok{|}\StringTok{ }
-\StringTok{                                        }\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{==}\StringTok{ "T"}\NormalTok{, }\StringTok{"F"}\NormalTok{,}
-\NormalTok{                                 train}\OperatorTok{$}\NormalTok{CabinClean[i]))))}
-\NormalTok{\}}
+\KeywordTok{table}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##  A  B  C  D  E  F 
+## 15 47 59 33 32 18
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
 \CommentTok{# replace old Cabin}
 \NormalTok{train}\OperatorTok{$}\NormalTok{Cabin <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean)}
 \NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean <-}\StringTok{ }\OtherTok{NULL}
@@ -618,7 +615,7 @@ Sex give us a better understanding of these attributes:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-14-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-15-1.pdf}
 
 Majorities did not survive, were in class 3 and were males, so being
 female and higher class is an indicator of survival, as expected.
@@ -633,7 +630,7 @@ female and higher class is an indicator of survival, as expected.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-15-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-16-1.pdf}
 
 Most people were in Cabin C and yet the distribution is not too skewed,
 while a vast majority embarked in Southhampton. Most titles are Mr., and
@@ -652,7 +649,7 @@ and \texttt{Fare}:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-16-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-17-1.pdf}
 
 Ages are as expected roughtly normally distributed, with some older
 folks positively skewing the distribution. We will consider binning this
@@ -675,7 +672,7 @@ log (in blue, scaled up for ease of comparison).
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-17-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-18-1.pdf}
 
 Since the distributions are similarly skewed, we could potentially
 combine the Siblings/Spouse and Parents/Children attributes into a
@@ -740,7 +737,7 @@ to a few choice attributes:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-20-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-21-1.pdf}
 
 Notice how numerical attributes (\texttt{Age} and \texttt{Fare}) combine
 well into a scatterplot, yet other attributes are not plotted exactly as
@@ -782,7 +779,7 @@ A mosaic plot shows neatly this interaction:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-21-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-22-1.pdf}
 
 It would seem that folks in first class and second class had it better
 than those in third class. What the mosaic plot shows is also the
@@ -803,7 +800,7 @@ training sample of course).
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-22-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-23-1.pdf}
 
 Females were much more likely to survive, and the majority of the
 passengers was male.
@@ -826,7 +823,7 @@ passengers was male.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-23-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-24-1.pdf}
 
 As expected, the probability of survival declines with age, as shown by
 the linear fit, which is quite similar to the logistic fit (a sinusoidal
@@ -849,7 +846,7 @@ probabilities.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-24-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-25-1.pdf}
 
 Having one sibling or spouse is most indicative of survival, followed by
 two, then none, then four and up. The probability of survival is very
@@ -872,7 +869,7 @@ the smaller sample sizes as shown in the mosaic plot.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-25-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-26-1.pdf}
 
 Similar results to those observed in the previous plot are seen, except
 for the higher probability of survival for someone with 3 (presumably)
@@ -900,7 +897,7 @@ findings to select the best method to create our indicator variables.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-26-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-27-1.pdf}
 
 Unlike the plot of Survival by Age, we observe extreme probabilities
 given the skewed distribution of Fare, which shows how survival is
@@ -926,7 +923,7 @@ variable as opposed to the original Fare attribute.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-27-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-28-1.pdf}
 
 The \texttt{FareLog} variable will indeed be useful for linear modeling.
 
@@ -950,7 +947,7 @@ the results of this plot should be decreased.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-28-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-29-1.pdf}
 
 It would appear that perhaps cabin is not as associated with
 survivability as we had hoped for, given that A cabins are on the deck
@@ -975,7 +972,7 @@ and F cabins near the keel where the ship hit the iceberg.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-29-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-30-1.pdf}
 
 There seems to be some evidence that having embarked in Southhampton is
 an indicator of higher probability of survival.
@@ -997,7 +994,7 @@ the boxplots given the highly skewed distribution of fare.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-30-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-31-1.pdf}
 
 Several curiosities pop out in this plot. First, Southhampton's higher
 survivability is not entirely associated with fare, since Cherbourg
@@ -1024,7 +1021,7 @@ almost no difference in Queenstown.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-31-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-32-1.pdf}
 
 Title can be seen as a proxy for gender and as we've seen, females
 survived a lot better than males. It is worth keeping this attribute as
@@ -1055,7 +1052,7 @@ gender groups, i.e.~those with rare titles.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-32-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-33-1.pdf}
 
 Longer names do appear to have some association with higher
 probabilities of survival so we are also keeping this feature. It might
@@ -1143,7 +1140,7 @@ second plot below.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-34-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-35-1.pdf}
 
 Another strategy would be to \textbf{generate random values} given a
 similar distribution to that which we observed in our traning data, yet

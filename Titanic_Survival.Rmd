@@ -2,7 +2,7 @@
 title: "Titanic Survival Part 1: EDA in R"
 author: "Marcelo Sanches"
 date: "July 4, 2019"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -204,31 +204,21 @@ Cabin has 687 NAs and 147 levels yet cabin locations might be important in deter
 
 
 ```{r}
-# removing ending digits 
 train$CabinClean <- vector("character", nrow(train))
 for (i in 1:nrow(train)) {
-	pattern <- "[0-9]+$"
-	m <- regexec(pattern, train$Cabin[i])
-	digits <- regmatches(train$Cabin[i], m)
-	train$CabinClean[i] <- trimws(sub(digits, "", train$Cabin[i]), which="right")
+  # ID digits and white space
+	pattern <- "[0-9]*|\\s"
+  # reduce to only first letter given multiple cabins
+	train$CabinClean[i] <- substr(gsub(pattern, "", train$Cabin[i]),1,1)
+	# bin letters higher than F to the F category
+	high_cabins <- toupper(letters[letters >"f"])
+	if (train$CabinClean[i] %in% high_cabins) train$CabinClean[i] <- "F"
 }
-# recategorizing manually, letters higher than F are binned into the F level
-for (i in 1:nrow(train)) {
-train$CabinClean[i] <- ifelse(train$CabinClean[i] == "B51 B53 B" | 
-                              train$CabinClean[i] == "B57 B59 B63 B" | 
-                              train$CabinClean[i] == "B58 B" | 
-					                    train$CabinClean[i] == "B82 B" | 
-					                    train$CabinClean[i] == "B96 B", "B",
-					             ifelse(train$CabinClean[i] == "C22 C" | 
-					                    train$CabinClean[i] == "C23 C25 C" | 
-					                    train$CabinClean[i] == "C62 C", "C",						
-					             ifelse(train$CabinClean[i] == "D10 D", "D",
-					             ifelse(train$CabinClean[i] == "F E"| 
-					                    train$CabinClean[i] == "F G" | 
-					                    train$CabinClean[i] == "G" | 
-					                    train$CabinClean[i] == "T", "F",
-					             train$CabinClean[i]))))
-}
+table(train$CabinClean)
+```
+
+
+```{r}
 # replace old Cabin
 train$Cabin <- factor(train$CabinClean)
 train$CabinClean <- NULL
