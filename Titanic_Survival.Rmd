@@ -603,7 +603,7 @@ The tree seems to be overpredicting discrete levels of ages such as 30, 10, and 
 
 
 ```{r fig.height=4,fig.width=6}
-library(randomForest)
+suppressMessages(library(randomForest))
 set.seed(1)
 # checking various RMSEs
 rf_RMSEs <- vector("numeric", length=10)
@@ -635,8 +635,7 @@ Making predictions on the `noAge` data, imputing values and comparing the new, f
 
 
 
-```
-
+---
 
 
 
