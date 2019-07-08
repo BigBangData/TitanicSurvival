@@ -2,7 +2,7 @@
 title: "Titanic Survival Part 1: EDA in R"
 author: "Marcelo Sanches"
 date: "July 4, 2019"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -558,35 +558,87 @@ Another strategy would be to **generate random values** given a similar distribu
 
 A final and more sophisticated approach would be to use the rest of the information in the training data and **generate predictions** for the ages of those individuals, based on other attributes. Since Decision Tree models are easy to use and accept missing values and unscaled features and so forth, we can easily generate ages without much hassle and modeling work.
 
+First we separate the data into sets with age and without age:
 
 ```{r}
+'%ni%' <- Negate('%in%')
+out_vars <- c("SurvivedNum","FareLog") # we do not need these redundant features
+yesAge <- train[!is.na(train$Age), colnames(train) %ni% out_vars] # 714 rows
+noAge <- train[is.na(train$Age), colnames(train) %ni% out_vars] # 177 rows we're trying to predict
+noAge <- noAge[, colnames(noAge) != "Age"]
+```
+
+Now we can use the dataset with ages to train a tree model:
+
+```{r fig.height=8, fig.width=9}
 library(tree)
 library(caTools)
-
-'%ni%' <- Negate('%in%')
-out_vars <- c("SurvivedFac","FareLog") # we do not need these redundant features
-Y <- train[,colnames(train)=="SurvivedNum"] # outcome 
-
-set.seed(123) # set random seed for reproducibility
-tree_bool <- sample.split(Y, SplitRatio = 2/3) # see note below re: proportions
-tree_train <- train[tree_bool,colnames(train) %ni% out_vars]
-tree_test <- train[!tree_bool,colnames(train) %ni% out_vars]
-
-# sample.split() performs proportionate sampling of the outcome
-table(tree_train$SurvivedNum)/nrow(tree_train)
-table(tree_test$SurvivedNum)/nrow(tree_test)
+set.seed(1) 
+# split on outcome
+Y_age <- yesAge[, "Age"]
+age_bool <- sample.split(Y_age, SplitRatio = 2/3) 
+age_train <- yesAge[age_bool, ]
+age_test <- yesAge[!age_bool, colnames(yesAge) != "Age"]
+# fit model
+age_mod <- tree(Age~.,data=age_train)
+# plot tree
+plot(age_mod)
+text(age_mod, pretty=0)
 ```
 
-```{r}
-tree_train_mod <- tree(SurvivedNum~.,data=tree_train)
-summary(tree_train_mod)
+According to our single tree, the passenger class and number of parents and children are the best predictors for age, followed by title, fare, cabin, and port of embarkation, as can be seen in the numerous nodes. One problem with this single tree approach is that another random starting point would generate an entirely different tree. 
+
+Let's first see how this tree did as far as predicting ages in the test set:
+
+```{r fig.height=5,fig.width=7}
+y_hat <- predict(age_mod, newdata=age_test)
+y_test <- yesAge[!age_bool, "Age"]
+test_RMSE <- round(sqrt(mean((y_hat - y_test)^2)),2)
+plot(y_hat, y_test,ylab="Actual Age",xlab="Predicted Age",pch=19,col=rgb(0,0,1,0.3))
+text(c(42,47),10, c("RMSE = ", test_RMSE))
+abline(0,1, col="red",lty=2)
+```
+
+The tree seems to be overpredicting discrete levels of ages such as 30, 10, and 40, and making lots of errors. Let's see if an ensemble model performs better.
+
+
+```{r fig.height=4,fig.width=6}
+library(randomForest)
+set.seed(1)
+# checking various RMSEs
+rf_RMSEs <- vector("numeric", length=10)
+for (i in 1:10) {
+  rf_age <- randomForest(Age ~., data=age_train, mtry=i, na.action=na.omit)
+  rf_yhat <- predict(rf_age, newdata=age_test)
+  rf_RMSEs[i] <- sqrt(mean((rf_yhat - y_test)^2,na.rm=TRUE))
+}
+plot(rf_RMSEs, ylim=range(rf_RMSEs), ylab="Root Mean Squared Error", col="red",
+     xlab="Num. of Features Randomly Sampled at Each Split", type="l")
+```
+
+Looks like 4 features gets the job done:
+
+```{r fig.height=5,fig.width=7}
+set.seed(1)
+rf_age <- randomForest(Age ~., data=age_train, mtry=4, na.action=na.omit)
+rf_yhat <- predict(rf_age, newdata=age_test)
+test_RMSE <- round(sqrt(mean((rf_yhat - y_test)^2, na.rm=TRUE)), 2)
+plot(rf_yhat, y_test,ylab="Actual Age",xlab="Predicted Age",pch=19,col=rgb(0,0,1,0.5))
+text(c(38,42),10, c("RMSE = ", test_RMSE))
+abline(0,1, col="red",lty=2)
 ```
 
 
-```{r fig.height=6}
-plot(tree_train_mod)
-text(tree_train_mod, pretty=0)
+The root mean squared error is a bit better even though there were many missing values in this model. 
+
+Making predictions on the `noAge` data, imputing values and comparing the new, full `Age` distribution to our original distribution of ages.
+
+
+
 ```
+
+
+
 
 
 

@@ -1155,71 +1155,132 @@ Tree models are easy to use and accept missing values and unscaled
 features and so forth, we can easily generate ages without much hassle
 and modeling work.
 
+First we separate the data into sets with age and without age:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\StringTok{'%ni%'}\NormalTok{ <-}\StringTok{ }\KeywordTok{Negate}\NormalTok{(}\StringTok{'%in%'}\NormalTok{)}
+\NormalTok{out_vars <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"SurvivedNum"}\NormalTok{,}\StringTok{"FareLog"}\NormalTok{) }\CommentTok{# we do not need these redundant features}
+\NormalTok{yesAge <-}\StringTok{ }\NormalTok{train[}\OperatorTok{!}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age), }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars] }\CommentTok{# 714 rows}
+\NormalTok{noAge <-}\StringTok{ }\NormalTok{train[}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age), }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars] }\CommentTok{# 177 rows we're trying to predict}
+\NormalTok{noAge <-}\StringTok{ }\NormalTok{noAge[, }\KeywordTok{colnames}\NormalTok{(noAge) }\OperatorTok{!=}\StringTok{ "Age"}\NormalTok{]}
+\end{Highlighting}
+\end{Shaded}
+
+Now we can use the dataset with ages to train a tree model:
+
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(tree)}
 \KeywordTok{library}\NormalTok{(caTools)}
-
-\StringTok{'%ni%'}\NormalTok{ <-}\StringTok{ }\KeywordTok{Negate}\NormalTok{(}\StringTok{'%in%'}\NormalTok{)}
-\NormalTok{out_vars <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"SurvivedFac"}\NormalTok{,}\StringTok{"FareLog"}\NormalTok{) }\CommentTok{# we do not need these redundant features}
-\NormalTok{Y <-}\StringTok{ }\NormalTok{train[,}\KeywordTok{colnames}\NormalTok{(train)}\OperatorTok{==}\StringTok{"SurvivedNum"}\NormalTok{] }\CommentTok{# outcome }
-
-\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{) }\CommentTok{# set random seed for reproducibility}
-\NormalTok{tree_bool <-}\StringTok{ }\KeywordTok{sample.split}\NormalTok{(Y, }\DataTypeTok{SplitRatio =} \DecValTok{2}\OperatorTok{/}\DecValTok{3}\NormalTok{) }\CommentTok{# see note below re: proportions}
-\NormalTok{tree_train <-}\StringTok{ }\NormalTok{train[tree_bool,}\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars]}
-\NormalTok{tree_test <-}\StringTok{ }\NormalTok{train[}\OperatorTok{!}\NormalTok{tree_bool,}\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars]}
-
-\CommentTok{# sample.split() performs proportionate sampling of the outcome}
-\KeywordTok{table}\NormalTok{(tree_train}\OperatorTok{$}\NormalTok{SurvivedNum)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(tree_train)}
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{) }
+\CommentTok{# split on outcome}
+\NormalTok{Y_age <-}\StringTok{ }\NormalTok{yesAge[, }\StringTok{"Age"}\NormalTok{]}
+\NormalTok{age_bool <-}\StringTok{ }\KeywordTok{sample.split}\NormalTok{(Y_age, }\DataTypeTok{SplitRatio =} \DecValTok{2}\OperatorTok{/}\DecValTok{3}\NormalTok{) }
+\NormalTok{age_train <-}\StringTok{ }\NormalTok{yesAge[age_bool, ]}
+\NormalTok{age_test <-}\StringTok{ }\NormalTok{yesAge[}\OperatorTok{!}\NormalTok{age_bool, }\KeywordTok{colnames}\NormalTok{(yesAge) }\OperatorTok{!=}\StringTok{ "Age"}\NormalTok{]}
+\CommentTok{# fit model}
+\NormalTok{age_mod <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(Age}\OperatorTok{~}\NormalTok{.,}\DataTypeTok{data=}\NormalTok{age_train)}
+\CommentTok{# plot tree}
+\KeywordTok{plot}\NormalTok{(age_mod)}
+\KeywordTok{text}\NormalTok{(age_mod, }\DataTypeTok{pretty=}\DecValTok{0}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{verbatim}
-## 
-##         0         1 
-## 0.6161616 0.3838384
-\end{verbatim}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-37-1.pdf}
+
+According to our single tree, the passenger class and number of parents
+and children are the best predictors for age, followed by title, fare,
+cabin, and port of embarkation, as can be seen in the numerous nodes.
+One problem with this single tree approach is that another random
+starting point would generate an entirely different tree.
+
+Let's first see how this tree did as far as predicting ages in the test
+set:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{table}\NormalTok{(tree_test}\OperatorTok{$}\NormalTok{SurvivedNum)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(tree_test)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## 
-##         0         1 
-## 0.6161616 0.3838384
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{tree_train_mod <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{.,}\DataTypeTok{data=}\NormalTok{tree_train)}
-\KeywordTok{summary}\NormalTok{(tree_train_mod)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## 
-## Regression tree:
-## tree(formula = SurvivedNum ~ ., data = tree_train)
-## Variables actually used in tree construction:
-## [1] "Title" "Cabin" "Age"   "SibSp" "Parch"
-## Number of terminal nodes:  12 
-## Residual mean deviance:  0.1016 = 11.18 / 110 
-## Distribution of residuals:
-##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
-## -0.97560  0.00000  0.02439  0.00000  0.02439  0.77780
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(tree_train_mod)}
-\KeywordTok{text}\NormalTok{(tree_train_mod, }\DataTypeTok{pretty=}\DecValTok{0}\NormalTok{)}
+\NormalTok{y_hat <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(age_mod, }\DataTypeTok{newdata=}\NormalTok{age_test)}
+\NormalTok{y_test <-}\StringTok{ }\NormalTok{yesAge[}\OperatorTok{!}\NormalTok{age_bool, }\StringTok{"Age"}\NormalTok{]}
+\NormalTok{test_RMSE <-}\StringTok{ }\KeywordTok{round}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{mean}\NormalTok{((y_hat }\OperatorTok{-}\StringTok{ }\NormalTok{y_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{)),}\DecValTok{2}\NormalTok{)}
+\KeywordTok{plot}\NormalTok{(y_hat, y_test,}\DataTypeTok{ylab=}\StringTok{"Actual Age"}\NormalTok{,}\DataTypeTok{xlab=}\StringTok{"Predicted Age"}\NormalTok{,}\DataTypeTok{pch=}\DecValTok{19}\NormalTok{,}\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\FloatTok{0.3}\NormalTok{))}
+\KeywordTok{text}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{42}\NormalTok{,}\DecValTok{47}\NormalTok{),}\DecValTok{10}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\StringTok{"RMSE = "}\NormalTok{, test_RMSE))}
+\KeywordTok{abline}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{, }\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-38-1.pdf}
+
+The tree seems to be overpredicting discrete levels of ages such as 30,
+10, and 40, and making lots of errors. Let's see if an ensemble model
+performs better.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{library}\NormalTok{(randomForest)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## randomForest 4.6-14
+\end{verbatim}
+
+\begin{verbatim}
+## Type rfNews() to see new features/changes/bug fixes.
+\end{verbatim}
+
+\begin{verbatim}
+## 
+## Attaching package: 'randomForest'
+\end{verbatim}
+
+\begin{verbatim}
+## The following object is masked from 'package:ggplot2':
+## 
+##     margin
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\CommentTok{# checking various RMSEs}
+\NormalTok{rf_RMSEs <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"numeric"}\NormalTok{, }\DataTypeTok{length=}\DecValTok{10}\NormalTok{)}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{) \{}
+\NormalTok{  rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{age_train, }\DataTypeTok{mtry=}\NormalTok{i, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
+\NormalTok{  rf_yhat <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{age_test)}
+\NormalTok{  rf_RMSEs[i] <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{mean}\NormalTok{((rf_yhat }\OperatorTok{-}\StringTok{ }\NormalTok{y_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{,}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{))}
+\NormalTok{\}}
+\KeywordTok{plot}\NormalTok{(rf_RMSEs, }\DataTypeTok{ylim=}\KeywordTok{range}\NormalTok{(rf_RMSEs), }\DataTypeTok{ylab=}\StringTok{"Root Mean Squared Error"}\NormalTok{, }\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}
+     \DataTypeTok{xlab=}\StringTok{"Num. of Features Randomly Sampled at Each Split"}\NormalTok{, }\DataTypeTok{type=}\StringTok{"l"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-39-1.pdf}
+
+Looks like 4 features gets the job done:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{age_train, }\DataTypeTok{mtry=}\DecValTok{4}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
+\NormalTok{rf_yhat <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{age_test)}
+\NormalTok{test_RMSE <-}\StringTok{ }\KeywordTok{round}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{mean}\NormalTok{((rf_yhat }\OperatorTok{-}\StringTok{ }\NormalTok{y_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{, }\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)), }\DecValTok{2}\NormalTok{)}
+\KeywordTok{plot}\NormalTok{(rf_yhat, y_test,}\DataTypeTok{ylab=}\StringTok{"Actual Age"}\NormalTok{,}\DataTypeTok{xlab=}\StringTok{"Predicted Age"}\NormalTok{,}\DataTypeTok{pch=}\DecValTok{19}\NormalTok{,}\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\FloatTok{0.5}\NormalTok{))}
+\KeywordTok{text}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{38}\NormalTok{,}\DecValTok{42}\NormalTok{),}\DecValTok{10}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\StringTok{"RMSE = "}\NormalTok{, test_RMSE))}
+\KeywordTok{abline}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{, }\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-40-1.pdf}
+
+The root mean squared error is a bit better even though there were many
+missing values in this model.
+
+Making predictions on the \texttt{noAge} data, imputing values and
+comparing the new, full \texttt{Age} distribution to our original
+distribution of ages.
+
+```
 
 
 \end{document}
