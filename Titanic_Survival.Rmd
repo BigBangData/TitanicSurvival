@@ -561,20 +561,32 @@ A final and more sophisticated approach would be to use the rest of the informat
 
 ```{r}
 library(tree)
+library(caTools)
+
+'%ni%' <- Negate('%in%')
+out_vars <- c("SurvivedFac","FareLog") # we do not need these redundant features
+Y <- train[,colnames(train)=="SurvivedNum"] # outcome 
+
+set.seed(123) # set random seed for reproducibility
+tree_bool <- sample.split(Y, SplitRatio = 2/3) # see note below re: proportions
+tree_train <- train[tree_bool,colnames(train) %ni% out_vars]
+tree_test <- train[!tree_bool,colnames(train) %ni% out_vars]
+
+# sample.split() performs proportionate sampling of the outcome
+table(tree_train$SurvivedNum)/nrow(tree_train)
+table(tree_test$SurvivedNum)/nrow(tree_test)
+```
+
+```{r}
+tree_train_mod <- tree(SurvivedNum~.,data=tree_train)
+summary(tree_train_mod)
 ```
 
 
-
----
-
-
-
-
-
-
-
-
-
+```{r fig.height=6}
+plot(tree_train_mod)
+text(tree_train_mod, pretty=0)
+```
 
 
 

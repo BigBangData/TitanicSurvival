@@ -1158,10 +1158,68 @@ and modeling work.
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{library}\NormalTok{(tree)}
+\KeywordTok{library}\NormalTok{(caTools)}
+
+\StringTok{'%ni%'}\NormalTok{ <-}\StringTok{ }\KeywordTok{Negate}\NormalTok{(}\StringTok{'%in%'}\NormalTok{)}
+\NormalTok{out_vars <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"SurvivedFac"}\NormalTok{,}\StringTok{"FareLog"}\NormalTok{) }\CommentTok{# we do not need these redundant features}
+\NormalTok{Y <-}\StringTok{ }\NormalTok{train[,}\KeywordTok{colnames}\NormalTok{(train)}\OperatorTok{==}\StringTok{"SurvivedNum"}\NormalTok{] }\CommentTok{# outcome }
+
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{123}\NormalTok{) }\CommentTok{# set random seed for reproducibility}
+\NormalTok{tree_bool <-}\StringTok{ }\KeywordTok{sample.split}\NormalTok{(Y, }\DataTypeTok{SplitRatio =} \DecValTok{2}\OperatorTok{/}\DecValTok{3}\NormalTok{) }\CommentTok{# see note below re: proportions}
+\NormalTok{tree_train <-}\StringTok{ }\NormalTok{train[tree_bool,}\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars]}
+\NormalTok{tree_test <-}\StringTok{ }\NormalTok{train[}\OperatorTok{!}\NormalTok{tree_bool,}\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars]}
+
+\CommentTok{# sample.split() performs proportionate sampling of the outcome}
+\KeywordTok{table}\NormalTok{(tree_train}\OperatorTok{$}\NormalTok{SurvivedNum)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(tree_train)}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\begin{verbatim}
+## 
+##         0         1 
+## 0.6161616 0.3838384
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{table}\NormalTok{(tree_test}\OperatorTok{$}\NormalTok{SurvivedNum)}\OperatorTok{/}\KeywordTok{nrow}\NormalTok{(tree_test)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+##         0         1 
+## 0.6161616 0.3838384
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{tree_train_mod <-}\StringTok{ }\KeywordTok{tree}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{.,}\DataTypeTok{data=}\NormalTok{tree_train)}
+\KeywordTok{summary}\NormalTok{(tree_train_mod)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 
+## Regression tree:
+## tree(formula = SurvivedNum ~ ., data = tree_train)
+## Variables actually used in tree construction:
+## [1] "Title" "Cabin" "Age"   "SibSp" "Parch"
+## Number of terminal nodes:  12 
+## Residual mean deviance:  0.1016 = 11.18 / 110 
+## Distribution of residuals:
+##     Min.  1st Qu.   Median     Mean  3rd Qu.     Max. 
+## -0.97560  0.00000  0.02439  0.00000  0.02439  0.77780
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{plot}\NormalTok{(tree_train_mod)}
+\KeywordTok{text}\NormalTok{(tree_train_mod, }\DataTypeTok{pretty=}\DecValTok{0}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-38-1.pdf}
 
 
 \end{document}
