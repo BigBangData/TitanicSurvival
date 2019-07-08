@@ -2,7 +2,7 @@
 title: "Titanic Survival Part 1: EDA in R"
 author: "Marcelo Sanches"
 date: "July 4, 2019"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
@@ -538,16 +538,16 @@ Teen <-  sum(ifelse(train$Age > 12 & train$Age < 20,1,0),na.rm=TRUE)
 YoungAdult <- sum(ifelse(train$Age > 19 & train$Age < 36,1,0),na.rm=TRUE)
 MiddleAged <- sum(ifelse(train$Age > 35 & train$Age < 56,1,0),na.rm=TRUE)
 Elderly <- sum(ifelse(train$Age > 55 & train$Age < 100,1,0),na.rm=TRUE)
-vec <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
+discrete_age_vec1 <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
 par(mfrow=c(1,2))
-barplot(vec, col=terrain.colors(5), ylim=c(0,515),
+barplot(discrete_age_vec1, col=terrain.colors(5), ylim=c(0,515),
         cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
         main="Age Distribution with Missing Values",  space=c(0,0,0,0,0),
         names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
 # adding all 177 NAs to the Young Adult category
 YoungAdult <- YoungAdult + sum(is.na(train$Age))
-vec <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
-barplot(vec, col=terrain.colors(5), ylim=c(0,515),
+discrete_age_vec2 <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
+barplot(discrete_age_vec2, col=terrain.colors(5), ylim=c(0,515),
         cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
         main="Age Distribution with Imputed Averages", space=c(0,0,0,0,0),
         names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
@@ -633,6 +633,68 @@ The root mean squared error is a bit better even though there were many missing 
 
 Making predictions on the `noAge` data, imputing values and comparing the new, full `Age` distribution to our original distribution of ages.
 
+```{r}
+set.seed(1)
+rf_age <- randomForest(Age ~., data=yesAge, mtry=4, na.action=na.omit)
+noAge$Age <- predict(rf_age, newdata=noAge)
+round(colMeans(is.na(noAge))[colSums(is.na(noAge))>0]*100,2)
+```
+
+We need to drop `Cabin` from the features given that the random forest model relies on it too much and it has too many missing values.
+
+
+```{r fig.height=4,fig.width=5}
+varImpPlot(rf_age)
+```
+
+
+
+
+```{r}
+set.seed(1)
+yesAge <- yesAge[,colnames(yesAge) != "Cabin"]
+noAge <- noAge[,colnames(noAge) != "Cabin"]
+rf_age <- randomForest(Age ~., data=yesAge, mtry=4, na.action=na.omit)
+# imputing Age predictions
+train$Age[is.na(train$Age)] <- round(predict(rf_age, newdata=noAge),0)
+sum(is.na(train$Age)) == 0
+```
+
+Confirming we have no missing values in `Age`, we now plot the new distribution of this variable:
+
+
+```{r fig.height=4.5, fig.width=9.5}
+Child <- sum(ifelse(train$Age > 0 & train$Age < 13,1,0))
+Teen <-  sum(ifelse(train$Age > 12 & train$Age < 20,1,0))
+YoungAdult <- sum(ifelse(train$Age > 19 & train$Age < 36,1,0))
+MiddleAged <- sum(ifelse(train$Age > 35 & train$Age < 56,1,0))
+Elderly <- sum(ifelse(train$Age > 55 & train$Age < 100,1,0))
+discrete_age_vec3 <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
+par(mfrow=c(1,2))
+# original values
+barplot(discrete_age_vec1, col=terrain.colors(5), ylim=c(0,515),
+        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
+        main="Age Distribution with Missing Values",  space=c(0,0,0,0,0),
+        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
+# imputed values
+barplot(discrete_age_vec3, col=terrain.colors(5), ylim=c(0,515),
+        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
+        main="Age Distribution with Imputed Values",  space=c(0,0,0,0,0),
+        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
+```
+
+
+We see a slight improvement from our previous imputation with averages. Treating `Age` as a numerical variable might have shown a greater improvement so we will keep both continuous and ordinal versions. 
+
+
+
+```{r}
+train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
+                    ifelse(train$Age > 12 & train$Age < 20, "Teen",
+                    ifelse(train$Age > 19 & train$Age < 36, "YoungAdult", 
+                    ifelse(train$Age > 35 & train$Age < 56, "MiddleAged", "Elderly"))))
+str(train)
+```
 
 
 ---

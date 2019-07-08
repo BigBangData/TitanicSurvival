@@ -1124,16 +1124,16 @@ second plot below.
 \NormalTok{YoungAdult <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{19} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{36}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
 \NormalTok{MiddleAged <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{35} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{56}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
 \NormalTok{Elderly <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{55} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{100}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
-\NormalTok{vec <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
+\NormalTok{discrete_age_vec1 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
 \KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\KeywordTok{barplot}\NormalTok{(vec, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
+\KeywordTok{barplot}\NormalTok{(discrete_age_vec1, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
         \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
         \DataTypeTok{main=}\StringTok{"Age Distribution with Missing Values"}\NormalTok{,  }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
         \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
 \CommentTok{# adding all 177 NAs to the Young Adult category}
 \NormalTok{YoungAdult <-}\StringTok{ }\NormalTok{YoungAdult }\OperatorTok{+}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age))}
-\NormalTok{vec <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
-\KeywordTok{barplot}\NormalTok{(vec, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
+\NormalTok{discrete_age_vec2 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
+\KeywordTok{barplot}\NormalTok{(discrete_age_vec2, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
         \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
         \DataTypeTok{main=}\StringTok{"Age Distribution with Imputed Averages"}\NormalTok{, }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
         \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
@@ -1217,31 +1217,7 @@ performs better.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{library}\NormalTok{(randomForest)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## randomForest 4.6-14
-\end{verbatim}
-
-\begin{verbatim}
-## Type rfNews() to see new features/changes/bug fixes.
-\end{verbatim}
-
-\begin{verbatim}
-## 
-## Attaching package: 'randomForest'
-\end{verbatim}
-
-\begin{verbatim}
-## The following object is masked from 'package:ggplot2':
-## 
-##     margin
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
+\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{library}\NormalTok{(randomForest))}
 \KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
 \CommentTok{# checking various RMSEs}
 \NormalTok{rf_RMSEs <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"numeric"}\NormalTok{, }\DataTypeTok{length=}\DecValTok{10}\NormalTok{)}
@@ -1280,7 +1256,107 @@ Making predictions on the \texttt{noAge} data, imputing values and
 comparing the new, full \texttt{Age} distribution to our original
 distribution of ages.
 
-```
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{yesAge, }\DataTypeTok{mtry=}\DecValTok{4}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
+\NormalTok{noAge}\OperatorTok{$}\NormalTok{Age <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{noAge)}
+\KeywordTok{round}\NormalTok{(}\KeywordTok{colMeans}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(noAge))[}\KeywordTok{colSums}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(noAge))}\OperatorTok{>}\DecValTok{0}\NormalTok{]}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Cabin   Age 
+## 89.27 89.27
+\end{verbatim}
+
+We need to drop \texttt{Cabin} from the features given that the random
+forest model relies on it too much and it has too many missing values.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{varImpPlot}\NormalTok{(rf_age)}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-42-1.pdf}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{yesAge <-}\StringTok{ }\NormalTok{yesAge[,}\KeywordTok{colnames}\NormalTok{(yesAge) }\OperatorTok{!=}\StringTok{ "Cabin"}\NormalTok{]}
+\NormalTok{noAge <-}\StringTok{ }\NormalTok{noAge[,}\KeywordTok{colnames}\NormalTok{(noAge) }\OperatorTok{!=}\StringTok{ "Cabin"}\NormalTok{]}
+\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{yesAge, }\DataTypeTok{mtry=}\DecValTok{4}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
+\CommentTok{# imputing Age predictions}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Age[}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age)] <-}\StringTok{ }\KeywordTok{round}\NormalTok{(}\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{noAge),}\DecValTok{0}\NormalTok{)}
+\KeywordTok{sum}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age)) }\OperatorTok{==}\StringTok{ }\DecValTok{0}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## [1] TRUE
+\end{verbatim}
+
+Confirming we have no missing values in \texttt{Age}, we now plot the
+new distribution of this variable:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{Child <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{0} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{13}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{Teen <-}\StringTok{  }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{12} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{20}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{YoungAdult <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{19} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{36}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{MiddleAged <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{35} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{56}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{Elderly <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{55} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{100}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
+\NormalTok{discrete_age_vec3 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
+\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
+\CommentTok{# original values}
+\KeywordTok{barplot}\NormalTok{(discrete_age_vec1, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
+        \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
+        \DataTypeTok{main=}\StringTok{"Age Distribution with Missing Values"}\NormalTok{,  }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
+        \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
+\CommentTok{# imputed values}
+\KeywordTok{barplot}\NormalTok{(discrete_age_vec3, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
+        \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
+        \DataTypeTok{main=}\StringTok{"Age Distribution with Imputed Values"}\NormalTok{,  }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
+        \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-44-1.pdf}
+
+We see a slight improvement from our previous imputation with averages.
+Treating \texttt{Age} as a numerical variable might have shown a greater
+improvement so we will keep both continuous and ordinal versions.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{train}\OperatorTok{$}\NormalTok{AgeFac <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{0} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{13}\NormalTok{, }\StringTok{"Child"}\NormalTok{,}
+                    \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{12} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{20}\NormalTok{, }\StringTok{"Teen"}\NormalTok{,}
+                    \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{19} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{36}\NormalTok{, }\StringTok{"YoungAdult"}\NormalTok{, }
+                    \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{35} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{56}\NormalTok{, }\StringTok{"MiddleAged"}\NormalTok{, }\StringTok{"Elderly"}\NormalTok{))))}
+\KeywordTok{str}\NormalTok{(train)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## 'data.frame':    891 obs. of  14 variables:
+##  $ Pclass     : Factor w/ 3 levels "1","2","3": 3 1 3 1 3 3 1 3 3 2 ...
+##  $ Sex        : Factor w/ 2 levels "female","male": 2 1 1 1 2 2 2 2 1 1 ...
+##  $ Age        : num  22 38 26 35 35 41 54 2 27 14 ...
+##  $ SibSp      : Factor w/ 7 levels "0","1","2","3",..: 2 2 1 2 1 1 1 4 1 2 ...
+##  $ Parch      : Factor w/ 7 levels "0","1","2","3",..: 1 1 1 1 1 1 1 2 3 1 ...
+##  $ Fare       : num  7.25 71.28 7.92 53.1 8.05 ...
+##  $ Cabin      : Factor w/ 6 levels "A","B","C","D",..: NA 3 NA 3 NA NA 5 NA NA NA ...
+##  $ Embarked   : Factor w/ 3 levels "C","Q","S": 3 1 3 3 3 2 3 3 3 1 ...
+##  $ SurvivedFac: Factor w/ 2 levels "0","1": 1 2 2 2 1 1 1 1 2 2 ...
+##  $ SurvivedNum: num  0 1 1 1 0 0 0 0 1 1 ...
+##  $ Title      : Factor w/ 5 levels "Miss.","Mr.",..: 2 3 1 3 2 2 2 5 3 3 ...
+##  $ NameLength : num  23 51 22 44 24 16 23 30 49 35 ...
+##  $ FareLog    : num  2.11 4.28 2.19 3.99 2.2 ...
+##  $ AgeFac     : chr  "YoungAdult" "MiddleAged" "YoungAdult" "YoungAdult" ...
+\end{verbatim}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 
 \end{document}
