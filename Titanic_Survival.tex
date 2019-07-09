@@ -152,24 +152,17 @@ production environment.
 
 \section{1. Basic EDA}\label{basic-eda}
 
-First we load the training data. We will not look at the test data until
-it is time to test; failing to do so would consist in \emph{data
-snooping}. In the spirit of the Titanic Kaggle kernel, I added the
-Kaggle Titanic datasets a level up on an \texttt{input/} directory.
+First we load the training data and look at its structure, summary, top
+and bottom rows. We will not look at the test data until it is time to
+test; failing to do so would consist in \emph{data snooping}. In the
+spirit of the Titanic Kaggle kernel, I added the Kaggle Titanic datasets
+a level up on an \texttt{input/} directory.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \CommentTok{# Load training set }
-\KeywordTok{rm}\NormalTok{(}\DataTypeTok{list=}\KeywordTok{ls}\NormalTok{())}
+\KeywordTok{rm}\NormalTok{(}\DataTypeTok{list=}\KeywordTok{ls}\NormalTok{()) }
 \NormalTok{train <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"../input/train.csv"}\NormalTok{, }\DataTypeTok{na.strings=}\StringTok{""}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-Basic EDA consists of looking at the dataset's structure, summary, top
-rows, and bottom rows:
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \KeywordTok{str}\NormalTok{(train)}
 \end{Highlighting}
 \end{Shaded}
@@ -231,42 +224,17 @@ index) for each passenger.
   Queenstown, S for Southhampton, the three ports of embarkation.
 \end{itemize}
 
+\texttt{PassengerId} is just an index. Since R keeps a row index and we
+shouldn't use this variable for modeling, we should drop it, but first
+check that is has no duplicates and has stepwise values (see ``trust but
+verify'' code chunk in the Appendix).
+
 A summary would be more useful if certain variables were converted to
-factor right away. Because \texttt{PassengerId} is just an index we can
-drop it, but first check that is has no duplicates or non-stepwise
-values (``trust but verify!''):
+factor, such as \texttt{Survived},\texttt{Pclass}, \texttt{SibSp}, and
+\texttt{Parch} (see Appendix for code).
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# trust but verify}
-\KeywordTok{sum}\NormalTok{(}\KeywordTok{duplicated}\NormalTok{(train}\OperatorTok{$}\NormalTok{PassengerId)) }\OperatorTok{==}\StringTok{ }\DecValTok{0}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## [1] TRUE
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{sum}\NormalTok{(train}\OperatorTok{$}\NormalTok{PassengerId }\OperatorTok{==}\StringTok{ }\DecValTok{1}\OperatorTok{:}\DecValTok{891}\NormalTok{) }\OperatorTok{==}\StringTok{ }\DecValTok{891}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## [1] TRUE
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# drop PassengerId and convert appropriate variables to factor}
-\NormalTok{train}\OperatorTok{$}\NormalTok{PassengerId <-}\StringTok{ }\OtherTok{NULL}
-\NormalTok{train}\OperatorTok{$}\NormalTok{SurvivedFac <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Survived) }\CommentTok{# for plotting as categorical outcome}
-\NormalTok{train}\OperatorTok{$}\NormalTok{SurvivedNum <-}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(train}\OperatorTok{$}\NormalTok{Survived) }\CommentTok{# for plotting as numerical outome}
-\NormalTok{train}\OperatorTok{$}\NormalTok{Survived <-}\StringTok{ }\OtherTok{NULL} \CommentTok{# drop original}
-\NormalTok{train}\OperatorTok{$}\NormalTok{Pclass <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Pclass)}
-\NormalTok{train}\OperatorTok{$}\NormalTok{SibSp <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{SibSp)}
-\NormalTok{train}\OperatorTok{$}\NormalTok{Parch <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Parch)}
 \CommentTok{# summary}
 \KeywordTok{summary}\NormalTok{(train)}
 \end{Highlighting}
@@ -361,8 +329,8 @@ appear to be relatively trouble free, yet in \texttt{SibSp},
 \end{verbatim}
 
 EDA also consists of plotting, but before that we should cleanup a bit
-our messy data, since plotting \texttt{Name} and \texttt{Ticket} as they
-are would be useless, for example.
+the data, since plotting \texttt{Name} and \texttt{Ticket} as they are
+would be useless.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
@@ -465,29 +433,11 @@ later on. Now we can drop \texttt{Name}.
   Cleaning up Ticket
 \end{itemize}
 
+After cleaning this feature (see Appendix), the distribution is as
+follows:
+
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{train}\OperatorTok{$}\NormalTok{Ticket <-}\StringTok{ }\KeywordTok{as.character}\NormalTok{(train}\OperatorTok{$}\NormalTok{Ticket) }
-\CommentTok{# removing ending digits }
-\NormalTok{train}\OperatorTok{$}\NormalTok{TicketClean <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"character"}\NormalTok{, }\KeywordTok{nrow}\NormalTok{(train))}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
-\NormalTok{    pattern <-}\StringTok{ "[0-9]+$"}
-\NormalTok{    m <-}\StringTok{ }\KeywordTok{regexec}\NormalTok{(pattern, train}\OperatorTok{$}\NormalTok{Ticket[i])}
-\NormalTok{    digits <-}\StringTok{ }\KeywordTok{regmatches}\NormalTok{(train}\OperatorTok{$}\NormalTok{Ticket[i], m)}
-\NormalTok{    train}\OperatorTok{$}\NormalTok{TicketClean[i] <-}\StringTok{ }\KeywordTok{trimws}\NormalTok{(}\KeywordTok{sub}\NormalTok{(digits, }\StringTok{""}\NormalTok{, train}\OperatorTok{$}\NormalTok{Ticket[i]), }\DataTypeTok{which=}\StringTok{"right"}\NormalTok{)}
-\NormalTok{\}}
-\CommentTok{# remove periods, fwd slashes, blanks, iteratively}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train))    train}\OperatorTok{$}\NormalTok{TicketClean[i] <-}\StringTok{ }\KeywordTok{gsub}\NormalTok{(}\StringTok{"[.]"}\NormalTok{, }\StringTok{""}\NormalTok{, train}\OperatorTok{$}\NormalTok{TicketClean[i])}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train))    train}\OperatorTok{$}\NormalTok{TicketClean[i] <-}\StringTok{ }\KeywordTok{gsub}\NormalTok{(}\StringTok{"[/]"}\NormalTok{, }\StringTok{""}\NormalTok{, train}\OperatorTok{$}\NormalTok{TicketClean[i])}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train))    train}\OperatorTok{$}\NormalTok{TicketClean[i] <-}\StringTok{ }\KeywordTok{gsub}\NormalTok{(}\StringTok{"[}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{s]"}\NormalTok{, }\StringTok{""}\NormalTok{, train}\OperatorTok{$}\NormalTok{TicketClean[i])}
-\CommentTok{# cleanup manually to bin similar entries}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
-\NormalTok{train}\OperatorTok{$}\NormalTok{TicketClean[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{TicketClean[i] }\OperatorTok{==}\StringTok{ "STONO2"}\NormalTok{, }\StringTok{"SOTONO2"}\NormalTok{,}
-                     \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{TicketClean[i] }\OperatorTok{==}\StringTok{ "STONO 2"}\NormalTok{, }\StringTok{"SOTONO2"}\NormalTok{,}
-                     \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{TicketClean[i] }\OperatorTok{==}\StringTok{ "SCAH Bale"}\NormalTok{, }\StringTok{"SCAH"}\NormalTok{,}
-                     \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{TicketClean[i] }\OperatorTok{==}\StringTok{ "SCPari"}\NormalTok{, }\StringTok{"SCPARIS"}\NormalTok{,}
-                     \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{TicketClean[i] }\OperatorTok{==}\StringTok{ ""}\NormalTok{, }\StringTok{"Other"}\NormalTok{, train}\OperatorTok{$}\NormalTok{TicketClean[i])))))}
-\NormalTok{\}}
 \CommentTok{# look at distribution within levels}
 \KeywordTok{table}\NormalTok{(train}\OperatorTok{$}\NormalTok{TicketClean)}
 \end{Highlighting}
@@ -509,32 +459,6 @@ Since the ``Other'' level is so overbearingly dominant and there are too
 many unrepresented categories, it is unlikely that a lot of useful
 information can be gathered from \texttt{Ticket} so we just drop this
 attribute altogether.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{train}\OperatorTok{$}\NormalTok{Ticket <-}\StringTok{ }\OtherTok{NULL}
-\NormalTok{train}\OperatorTok{$}\NormalTok{TicketClean <-}\StringTok{ }\OtherTok{NULL}
-\CommentTok{# let's look at the data now to get our bearings}
-\KeywordTok{head}\NormalTok{(train)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##   Pclass    Sex Age SibSp Parch    Fare Cabin Embarked SurvivedFac
-## 1      3   male  22     1     0  7.2500  <NA>        S           0
-## 2      1 female  38     1     0 71.2833   C85        C           1
-## 3      3 female  26     0     0  7.9250  <NA>        S           1
-## 4      1 female  35     1     0 53.1000  C123        S           1
-## 5      3   male  35     0     0  8.0500  <NA>        S           0
-## 6      3   male  NA     0     0  8.4583  <NA>        Q           0
-##   SurvivedNum Title NameLength
-## 1           0   Mr.         23
-## 2           1  Mrs.         51
-## 3           1 Miss.         22
-## 4           1  Mrs.         44
-## 5           0   Mr.         24
-## 6           0   Mr.         16
-\end{verbatim}
 
 \begin{itemize}
 \tightlist
@@ -560,18 +484,6 @@ ship hit the iceberg.
 \NormalTok{    high_cabins <-}\StringTok{ }\KeywordTok{toupper}\NormalTok{(letters[letters }\OperatorTok{>}\StringTok{"f"}\NormalTok{])}
     \ControlFlowTok{if}\NormalTok{ (train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{high_cabins) train}\OperatorTok{$}\NormalTok{CabinClean[i] <-}\StringTok{ "F"}
 \NormalTok{\}}
-\KeywordTok{table}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## 
-##  A  B  C  D  E  F 
-## 15 47 59 33 32 18
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
 \CommentTok{# replace old Cabin}
 \NormalTok{train}\OperatorTok{$}\NormalTok{Cabin <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean)}
 \NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean <-}\StringTok{ }\OtherTok{NULL}
@@ -603,32 +515,15 @@ strong conclusions about a population when using sample data.
 \subsection{Univariate EDA}\label{univariate-eda}
 
 In this section we look at feature distributions one at a time. A few
-quick plots of the class imbalances in Survived, Passenger Class, and
-Sex give us a better understanding of these attributes:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{SurvivedFac,}\DataTypeTok{main=}\StringTok{"Survived or Not"}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"red"}\NormalTok{,}\StringTok{"chartreuse3"}\NormalTok{))}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{Pclass,}\DataTypeTok{main=}\StringTok{"Passenger Class"}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"chartreuse3"}\NormalTok{, }\StringTok{"cadetblue3"}\NormalTok{, }\StringTok{"chocolate1"}\NormalTok{))}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{Sex,}\DataTypeTok{main=}\StringTok{"Sex"}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"palevioletred1"}\NormalTok{,}\StringTok{"cadetblue2"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
+quick plots of the class imbalances in \textbf{Survived, Passenger
+Class,} and \textbf{Sex} give us a better understanding of these
+attributes:
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-15-1.pdf}
 
-Majorities did not survive, were in class 3 and were males, so being
-female and higher class is an indicator of survival, as expected.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{3}\NormalTok{))}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{Cabin, }\DataTypeTok{main=}\StringTok{"Cabin"}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{6}\NormalTok{))}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{Embarked, }\DataTypeTok{main=}\StringTok{"Port Embarked"}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{3}\NormalTok{))}
-\NormalTok{train}\OperatorTok{$}\NormalTok{Title <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title)}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title, }\DataTypeTok{main=}\StringTok{"Titles"}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
+Majorities did not survive, purchased 3rd class tickets, and were males,
+so being female and higher class is an indicator of survival, as
+expected.
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-16-1.pdf}
 
@@ -639,38 +534,14 @@ rare female titles are barely represented.
 Tackling the distributions of the two numerical variables \texttt{Age}
 and \texttt{Fare}:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\KeywordTok{hist}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age, }\DataTypeTok{xlab=}\StringTok{'Age'}\NormalTok{, }\DataTypeTok{main=}\StringTok{"Ages"}\NormalTok{, }\DataTypeTok{ylab=}\StringTok{""}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\FloatTok{0.4}\NormalTok{,}\FloatTok{0.4}\NormalTok{,}\FloatTok{0.4}\NormalTok{))}
-\KeywordTok{hist}\NormalTok{(train}\OperatorTok{$}\NormalTok{Fare, }\DataTypeTok{xlab=}\StringTok{"Fare (Pounds Sterling)"}\NormalTok{, }\DataTypeTok{ylab=}\StringTok{""}\NormalTok{, }\DataTypeTok{main=}\StringTok{"Fares"}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\FloatTok{0.3}\NormalTok{))}
-\KeywordTok{hist}\NormalTok{(}\KeywordTok{log}\NormalTok{(train}\OperatorTok{$}\NormalTok{Fare)}\OperatorTok{*}\KeywordTok{max}\NormalTok{(train}\OperatorTok{$}\NormalTok{Fare)}\OperatorTok{/}\DecValTok{8}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\FloatTok{0.2}\NormalTok{), }\DataTypeTok{ylab=}\StringTok{""}\NormalTok{, }\DataTypeTok{add=}\OtherTok{TRUE}\NormalTok{)}
-\KeywordTok{legend}\NormalTok{(}\DecValTok{250}\NormalTok{, }\DecValTok{450}\NormalTok{, }\DataTypeTok{pch=}\DecValTok{15}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\FloatTok{0.3}\NormalTok{), }\StringTok{"log distribution"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-17-1.pdf}
 
 Ages are as expected roughtly normally distributed, with some older
 folks positively skewing the distribution. We will consider binning this
 variable and selecting age groups such as Children, Teenagers, Adults,
-and Elderly, after imputation of missing values.
-
-Fares are, as expected, quite skewed, so we could consider taking the
-log (in blue, scaled up for ease of comparison).
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{SS <-}\StringTok{ }\KeywordTok{table}\NormalTok{(train}\OperatorTok{$}\NormalTok{SibSp)}
-\NormalTok{PC <-}\StringTok{ }\KeywordTok{table}\NormalTok{(train}\OperatorTok{$}\NormalTok{Parch)}
-\NormalTok{counts <-}\StringTok{ }\KeywordTok{rbind}\NormalTok{(SS,PC)}
-\KeywordTok{rownames}\NormalTok{(counts) <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Sibling or Spouse"}\NormalTok{, }\StringTok{"Parent or Child"}\NormalTok{)}
-\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{))}
-\KeywordTok{barplot}\NormalTok{(counts, }\DataTypeTok{main=}\StringTok{"Number of Siblings/Spouses vs Parents/Children"}\NormalTok{,}
-  \DataTypeTok{xlab=}\StringTok{"Number of Relatives"}\NormalTok{, }\DataTypeTok{ylab=}\StringTok{""}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\KeywordTok{rgb}\NormalTok{(}\FloatTok{0.2}\NormalTok{,}\FloatTok{0.4}\NormalTok{,}\DecValTok{0}\NormalTok{,}\FloatTok{0.3}\NormalTok{),}\KeywordTok{rgb}\NormalTok{(}\FloatTok{0.2}\NormalTok{,}\DecValTok{0}\NormalTok{,}\FloatTok{0.5}\NormalTok{,}\FloatTok{0.3}\NormalTok{)),}
-  \DataTypeTok{legend =} \KeywordTok{rownames}\NormalTok{(counts), }\DataTypeTok{beside=}\OtherTok{TRUE}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
+and Elderly, after imputation of missing values. Fares are, as expected,
+quite skewed, so we could consider taking the log (blue distribution
+above, scaled up for ease of comparison).
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-18-1.pdf}
 
@@ -703,26 +574,35 @@ function:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{combn}\NormalTok{(}\DecValTok{11}\NormalTok{, }\DecValTok{2}\NormalTok{)}
+\CommentTok{# combinations}
+\KeywordTok{head}\NormalTok{(}\KeywordTok{t}\NormalTok{(}\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{combn}\NormalTok{(}\DecValTok{11}\NormalTok{, }\DecValTok{2}\NormalTok{))))}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##      [,1] [,2] [,3] [,4] [,5] [,6] [,7] [,8] [,9] [,10] [,11] [,12] [,13]
-## [1,]    1    1    1    1    1    1    1    1    1     1     2     2     2
-## [2,]    2    3    4    5    6    7    8    9   10    11     3     4     5
-##      [,14] [,15] [,16] [,17] [,18] [,19] [,20] [,21] [,22] [,23] [,24]
-## [1,]     2     2     2     2     2     2     3     3     3     3     3
-## [2,]     6     7     8     9    10    11     4     5     6     7     8
-##      [,25] [,26] [,27] [,28] [,29] [,30] [,31] [,32] [,33] [,34] [,35]
-## [1,]     3     3     3     4     4     4     4     4     4     4     5
-## [2,]     9    10    11     5     6     7     8     9    10    11     6
-##      [,36] [,37] [,38] [,39] [,40] [,41] [,42] [,43] [,44] [,45] [,46]
-## [1,]     5     5     5     5     5     6     6     6     6     6     7
-## [2,]     7     8     9    10    11     7     8     9    10    11     8
-##      [,47] [,48] [,49] [,50] [,51] [,52] [,53] [,54] [,55]
-## [1,]     7     7     7     8     8     8     9     9    10
-## [2,]     9    10    11     9    10    11    10    11    11
+##    [,1] [,2]
+## X1    1    2
+## X2    1    3
+## X3    1    4
+## X4    1    5
+## X5    1    6
+## X6    1    7
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{tail}\NormalTok{(}\KeywordTok{t}\NormalTok{(}\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{combn}\NormalTok{(}\DecValTok{11}\NormalTok{, }\DecValTok{2}\NormalTok{))))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##     [,1] [,2]
+## X50    8    9
+## X51    8   10
+## X52    8   11
+## X53    9   10
+## X54    9   11
+## X55   10   11
 \end{verbatim}
 
 One way to plot all of these at once is using a scatterplot matrix. The
@@ -732,6 +612,7 @@ to a few choice attributes:
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{# Scatterplot matrix}
 \NormalTok{chosen <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"SurvivedNum"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{, }\StringTok{"Sex"}\NormalTok{,}\StringTok{"Age"}\NormalTok{,}\StringTok{"Fare"}\NormalTok{,}\StringTok{"Embarked"}\NormalTok{)}
 \KeywordTok{plot}\NormalTok{(train[,}\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%in%}\StringTok{ }\NormalTok{chosen])}
 \end{Highlighting}
@@ -757,27 +638,9 @@ Survival}\label{interactions-with-survival}
 
 A mosaic plot shows neatly this interaction:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# 1. Survived and Pclass }
-\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{require}\NormalTok{(ggplot2))}
-\KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{require}\NormalTok{(ggmosaic))}
-\end{Highlighting}
-\end{Shaded}
-
 \begin{verbatim}
 ## Warning: package 'ggmosaic' was built under R version 3.5.3
 \end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{Survival <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{SurvivedNum}\OperatorTok{==}\DecValTok{1}\NormalTok{,}\StringTok{"yes"}\NormalTok{,}\StringTok{"no"}\NormalTok{) }\CommentTok{# for ggplot}
-\NormalTok{PclassFac <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Pclass)}
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{train) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_mosaic}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{product}\NormalTok{(Survival, PclassFac),}\DataTypeTok{fill=}\NormalTok{Survival)) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Passenger Class'}\NormalTok{, }\DataTypeTok{y=}\StringTok{''}\NormalTok{, }\DataTypeTok{title=}\StringTok{'Tianic Survival by Passenger Class'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-22-1.pdf}
 
@@ -789,16 +652,8 @@ training sample of course).
 \begin{itemize}
 \tightlist
 \item
-  2 Survived \& Sex:
+  2 Survived \& Sex
 \end{itemize}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{train) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_mosaic}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{product}\NormalTok{(Survival, Sex),}\DataTypeTok{fill=}\NormalTok{Survival)) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Sex'}\NormalTok{, }\DataTypeTok{y=}\StringTok{''}\NormalTok{, }\DataTypeTok{title=}\StringTok{'Tianic Survival by Gender'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-23-1.pdf}
 
@@ -810,18 +665,6 @@ passengers was male.
 \item
   3 Survived \& Age
 \end{itemize}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{SurvivedNum}\OperatorTok{~}\NormalTok{train}\OperatorTok{$}\NormalTok{Age, }\DataTypeTok{pch=}\DecValTok{19}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,.}\DecValTok{6}\NormalTok{,.}\DecValTok{2}\NormalTok{),}
-    \DataTypeTok{main=}\StringTok{"Titanic Survival by Age"}\NormalTok{,}\DataTypeTok{ylab=}\StringTok{"Probability of Survival"}\NormalTok{, }\DataTypeTok{xlab=}\StringTok{"Age"}\NormalTok{)}
-\NormalTok{linmod=}\KeywordTok{lm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{Age,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{abline}\NormalTok{(linmod, }\DataTypeTok{col=}\StringTok{"green"}\NormalTok{, }\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{, }\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
-\NormalTok{g=}\KeywordTok{glm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{Age,}\DataTypeTok{family=}\StringTok{'binomial'}\NormalTok{,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{curve}\NormalTok{(}\KeywordTok{predict}\NormalTok{(g,}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{Age=}\NormalTok{x),}\DataTypeTok{type=}\StringTok{"resp"}\NormalTok{),}\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{,}\DataTypeTok{add=}\OtherTok{TRUE}\NormalTok{) }
-\KeywordTok{legend}\NormalTok{(}\DecValTok{60}\NormalTok{,}\FloatTok{0.7}\NormalTok{,}\KeywordTok{c}\NormalTok{(}\StringTok{"linear fit"}\NormalTok{,}\StringTok{"logistic fit"}\NormalTok{), }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"green"}\NormalTok{,}\StringTok{"red"}\NormalTok{), }\DataTypeTok{lty=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-24-1.pdf}
 
@@ -837,15 +680,6 @@ probabilities.
   4 Survived \& SibSp
 \end{itemize}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{train) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_mosaic}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{product}\NormalTok{(Survival, SibSp),}\DataTypeTok{fill=}\NormalTok{Survival)) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Number of Siblings/Spouses'}\NormalTok{, }\DataTypeTok{y=}\StringTok{''}\NormalTok{, }
-   \DataTypeTok{title=}\StringTok{'Tianic Survival by Number of Siblings or Spouses'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-25-1.pdf}
 
 Having one sibling or spouse is most indicative of survival, followed by
@@ -859,15 +693,6 @@ the smaller sample sizes as shown in the mosaic plot.
 \item
   5 Survived \& Parch
 \end{itemize}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{train) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_mosaic}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{product}\NormalTok{(Survival, Parch),}\DataTypeTok{fill=}\NormalTok{Survival)) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Number of Parents/Children'}\NormalTok{, }\DataTypeTok{y=}\StringTok{''}\NormalTok{, }
-   \DataTypeTok{title=}\StringTok{'Tianic Survival by Number of Parents or Children'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-26-1.pdf}
 
@@ -885,18 +710,6 @@ findings to select the best method to create our indicator variables.
   6 Survived \& Fare
 \end{itemize}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{SurvivedNum}\OperatorTok{~}\NormalTok{train}\OperatorTok{$}\NormalTok{Fare, }\DataTypeTok{pch=}\DecValTok{19}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,.}\DecValTok{6}\NormalTok{,.}\DecValTok{2}\NormalTok{),}
-    \DataTypeTok{main=}\StringTok{"Titanic Survival by Fare"}\NormalTok{,}\DataTypeTok{ylab=}\StringTok{"Probability of Survival"}\NormalTok{, }\DataTypeTok{xlab=}\StringTok{"Fare (Pounds Sterling)"}\NormalTok{)}
-\NormalTok{linmod=}\KeywordTok{lm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{Fare,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{abline}\NormalTok{(linmod, }\DataTypeTok{col=}\StringTok{"green"}\NormalTok{, }\DataTypeTok{lwd=}\DecValTok{1}\NormalTok{, }\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
-\NormalTok{g=}\KeywordTok{glm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{Fare,}\DataTypeTok{family=}\StringTok{'binomial'}\NormalTok{,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{curve}\NormalTok{(}\KeywordTok{predict}\NormalTok{(g,}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{Fare=}\NormalTok{x),}\DataTypeTok{type=}\StringTok{"resp"}\NormalTok{),}\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{,}\DataTypeTok{add=}\OtherTok{TRUE}\NormalTok{) }
-\KeywordTok{legend}\NormalTok{(}\DecValTok{200}\NormalTok{,}\FloatTok{0.7}\NormalTok{,}\KeywordTok{c}\NormalTok{(}\StringTok{"linear fit"}\NormalTok{,}\StringTok{"logistic fit"}\NormalTok{), }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"green"}\NormalTok{,}\StringTok{"red"}\NormalTok{), }\DataTypeTok{lty=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-27-1.pdf}
 
 Unlike the plot of Survival by Age, we observe extreme probabilities
@@ -906,22 +719,6 @@ increasingly more probable the higher the fare.
 We can explore creating a log of Fare which could be used in modeling,
 as some models (i.e.~linear models) would benefit from this logged
 variable as opposed to the original Fare attribute.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# creating Log of Fare attribute}
-\NormalTok{train}\OperatorTok{$}\NormalTok{FareLog <-}\StringTok{ }\KeywordTok{log}\NormalTok{(train}\OperatorTok{$}\NormalTok{Fare}\OperatorTok{+}\DecValTok{1}\NormalTok{) }\CommentTok{# adding a pound to avoid Inf log values for 0 fares}
-\CommentTok{# plot}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{SurvivedNum}\OperatorTok{~}\NormalTok{train}\OperatorTok{$}\NormalTok{FareLog, }\DataTypeTok{pch=}\DecValTok{19}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,.}\DecValTok{6}\NormalTok{,.}\DecValTok{2}\NormalTok{),}
-    \DataTypeTok{main=}\StringTok{"Titanic Survival by Log of Fare"}\NormalTok{,}
-    \DataTypeTok{ylab=}\StringTok{"Probability of Survival"}\NormalTok{, }\DataTypeTok{xlab=}\StringTok{"Fare in Log(Pounds Sterling)"}\NormalTok{)}
-\NormalTok{linmod=}\KeywordTok{lm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{FareLog,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{abline}\NormalTok{(linmod, }\DataTypeTok{col=}\StringTok{"green"}\NormalTok{, }\DataTypeTok{lwd=}\DecValTok{1}\NormalTok{, }\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
-\NormalTok{g=}\KeywordTok{glm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{FareLog,}\DataTypeTok{family=}\StringTok{'binomial'}\NormalTok{,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{curve}\NormalTok{(}\KeywordTok{predict}\NormalTok{(g,}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{FareLog=}\NormalTok{x),}\DataTypeTok{type=}\StringTok{"resp"}\NormalTok{),}\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{,}\DataTypeTok{add=}\OtherTok{TRUE}\NormalTok{) }
-\KeywordTok{legend}\NormalTok{(}\DecValTok{1}\NormalTok{,}\FloatTok{0.7}\NormalTok{,}\KeywordTok{c}\NormalTok{(}\StringTok{"linear fit"}\NormalTok{,}\StringTok{"logistic fit"}\NormalTok{), }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"green"}\NormalTok{,}\StringTok{"red"}\NormalTok{), }\DataTypeTok{lty=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-28-1.pdf}
 
@@ -936,17 +733,6 @@ The \texttt{FareLog} variable will indeed be useful for linear modeling.
 Since our data has so many missing values for cabin, our confidence in
 the results of this plot should be decreased.
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# creating a copy of train with no missing values for cabin}
-\NormalTok{train2 <-}\StringTok{ }\NormalTok{train[}\OperatorTok{!}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Cabin),]}
-\NormalTok{Survival2 <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train2}\OperatorTok{$}\NormalTok{SurvivedNum}\OperatorTok{==}\DecValTok{1}\NormalTok{,}\StringTok{"yes"}\NormalTok{,}\StringTok{"no"}\NormalTok{) }
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{train2) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_mosaic}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{product}\NormalTok{(Survival2, Cabin),}\DataTypeTok{fill=}\NormalTok{Survival2)) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Cabin'}\NormalTok{, }\DataTypeTok{y=}\StringTok{''}\NormalTok{, }\DataTypeTok{title=}\StringTok{'Tianic Survival by Cabin'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-29-1.pdf}
 
 It would appear that perhaps cabin is not as associated with
@@ -959,19 +745,6 @@ and F cabins near the keel where the ship hit the iceberg.
   8 Survived \& Embarked
 \end{itemize}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{PortEmbarked <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Embarked}\OperatorTok{==}\StringTok{"C"}\NormalTok{,}\StringTok{"Cherbourg"}\NormalTok{, }
-                \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Embarked}\OperatorTok{==}\StringTok{"Q"}\NormalTok{,}\StringTok{"Queenstown"}\NormalTok{, }\StringTok{"Southampton"}\NormalTok{))}
-\NormalTok{dat <-}\StringTok{ }\KeywordTok{data.frame}\NormalTok{(Survival, PortEmbarked)}
-
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{dat) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_mosaic}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{product}\NormalTok{(Survival, PortEmbarked),}\DataTypeTok{fill=}\NormalTok{Survival)) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Port of Embarkation'}\NormalTok{, }\DataTypeTok{y=}\StringTok{''}\NormalTok{, }
-   \DataTypeTok{title=}\StringTok{'Tianic Survival by Port of Embarkation'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-30-1.pdf}
 
 There seems to be some evidence that having embarked in Southhampton is
@@ -982,17 +755,6 @@ considering the fares paid at each port, and whether survivability
 appears to me more associated with the fare or the port embarked. We use
 the log of fares since it would be hard to observe any differences in
 the boxplots given the highly skewed distribution of fare.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{dat}\OperatorTok{$}\NormalTok{FareLog <-}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{FareLog}
-\NormalTok{dat <-}\StringTok{ }\NormalTok{dat[}\OperatorTok{!}\KeywordTok{is.na}\NormalTok{(dat}\OperatorTok{$}\NormalTok{PortEmbarked),]}
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{dat) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_boxplot}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\NormalTok{PortEmbarked,}\DataTypeTok{y=}\NormalTok{FareLog, }\DataTypeTok{fill=}\NormalTok{Survival)) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Port of Embarkation'}\NormalTok{, }\DataTypeTok{y=}\StringTok{'Fare in Log(Pounds Sterling)'}\NormalTok{, }
-   \DataTypeTok{title=}\StringTok{'Titanic Survival by Port of Embarkation and Fare'}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-31-1.pdf}
 
@@ -1011,16 +773,6 @@ almost no difference in Queenstown.
   9 Survival and Title
 \end{itemize}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{ggplot}\NormalTok{(}\DataTypeTok{data=}\NormalTok{train) }\OperatorTok{+}
-\StringTok{   }\KeywordTok{geom_mosaic}\NormalTok{(}\KeywordTok{aes}\NormalTok{(}\DataTypeTok{x=}\KeywordTok{product}\NormalTok{(Survival, Title),}\DataTypeTok{fill=}\NormalTok{Survival)) }\OperatorTok{+}\StringTok{ }
-\StringTok{   }\KeywordTok{labs}\NormalTok{(}\DataTypeTok{x=}\StringTok{'Title'}\NormalTok{, }\DataTypeTok{y=}\StringTok{''}\NormalTok{,}
-   \DataTypeTok{title=}\StringTok{'Tianic Survival by Title'}\NormalTok{) }\OperatorTok{+}\StringTok{ }
-\StringTok{   }\KeywordTok{theme}\NormalTok{(}\DataTypeTok{axis.text.x =} \KeywordTok{element_text}\NormalTok{(}\DataTypeTok{angle =} \DecValTok{90}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-32-1.pdf}
 
 Title can be seen as a proxy for gender and as we've seen, females
@@ -1029,28 +781,10 @@ it shows some granularity in what kinds of folks survived better within
 gender groups, i.e.~those with rare titles.
 
 \begin{itemize}
+\tightlist
 \item
-  \begin{enumerate}
-  \def\labelenumi{\arabic{enumi}.}
-  \setcounter{enumi}{9}
-  \tightlist
-  \item
-    Survived and NameLength
-  \end{enumerate}
+  10 Survived and NameLength
 \end{itemize}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{SurvivedNum}\OperatorTok{~}\NormalTok{train}\OperatorTok{$}\NormalTok{NameLength, }\DataTypeTok{pch=}\DecValTok{19}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,.}\DecValTok{6}\NormalTok{,.}\DecValTok{2}\NormalTok{),}
-    \DataTypeTok{main=}\StringTok{"Titanic Survival by Name Length"}\NormalTok{,}
-    \DataTypeTok{ylab=}\StringTok{"Probability of Survival"}\NormalTok{, }\DataTypeTok{xlab=}\StringTok{"Name Length (chars)"}\NormalTok{)}
-\NormalTok{linmod=}\KeywordTok{lm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{NameLength,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{abline}\NormalTok{(linmod, }\DataTypeTok{col=}\StringTok{"green"}\NormalTok{, }\DataTypeTok{lwd=}\DecValTok{1}\NormalTok{, }\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
-\NormalTok{g=}\KeywordTok{glm}\NormalTok{(SurvivedNum}\OperatorTok{~}\NormalTok{NameLength,}\DataTypeTok{family=}\StringTok{'binomial'}\NormalTok{,}\DataTypeTok{data=}\NormalTok{train)}
-\KeywordTok{curve}\NormalTok{(}\KeywordTok{predict}\NormalTok{(g,}\KeywordTok{data.frame}\NormalTok{(}\DataTypeTok{NameLength=}\NormalTok{x),}\DataTypeTok{type=}\StringTok{"resp"}\NormalTok{),}\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{,}\DataTypeTok{lwd=}\DecValTok{2}\NormalTok{,}\DataTypeTok{add=}\OtherTok{TRUE}\NormalTok{) }
-\KeywordTok{legend}\NormalTok{(}\DecValTok{60}\NormalTok{,}\FloatTok{0.5}\NormalTok{,}\KeywordTok{c}\NormalTok{(}\StringTok{"linear fit"}\NormalTok{,}\StringTok{"logistic fit"}\NormalTok{), }\DataTypeTok{col=}\KeywordTok{c}\NormalTok{(}\StringTok{"green"}\NormalTok{,}\StringTok{"red"}\NormalTok{), }\DataTypeTok{lty=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-33-1.pdf}
 

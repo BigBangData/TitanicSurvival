@@ -11,77 +11,82 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Contents
 
+* Summary
+* Preliminary EDA
+* Pre-Processing 1: PassengerId, Survived, Pclass
+* Pre-Processing 2: Name, Sex
+* Pre-Processing 3: SibSp, Parch
+* Pre-Processing 4: Ticket, Fare
+* Pre-Processing 5: Cabin, Embarked
+* Pre-Processing 6: Age
+* Univariate Graphical EDA
+* Bivariate Graphical EDA
+* Multivariate Graphical EDA
+* Conclusion
 
-[LIST CONTENTS]
 
 ---
 
 # Summary
 
-[EXPLAIN PROJECT]
+## Motivation
 
-In Part 1 of the Titanic Survival project I conduct **Exploratory Data Analisys (EDA)** of the [Kaggle Titanic train dataset](https://www.kaggle.com/c/titanic/data) in RStudio, through summary tables and visualizations, performing minor pre-processing as needed. 
+The **Titanic Survival Project** was born out of my desire not only to participate in a Kaggle competition but also do avoid the common mistake of overfitting the test set by submitting various predictions. In a realistic production environment, the test set would be future data that we would run a single prediction on, not a playground for getting better at prediction outcomes of that particular set of data. 
 
-In Part 2 of the project I intend to write a Python script that succintly performs all essential pre-processing steps, emulating a production environment. 
+I also wanted to use **R** and **Python** and play to their strengths: R for **data exploration** and **quick visualizations**, and Python for **machine-learning pipelines** and **production code**. 
+
+## Project Parts
+
+In **Part 1** of the Titanic Survival project I conduct **Exploratory Data Analisys (EDA)** of the [Kaggle Titanic train dataset](https://www.kaggle.com/c/titanic/data) in R, creating an **RMarkdown report** with RStudio and the `knitr` package, with summary tables and visualizations, performing minor pre-processing as needed. 
+
+In **Part 2** of the project I perform all the necessary pre-processing steps for Machine Learning models, conduct model evaluation and regularization, and run predictions using Python in a **Jupyter Notebook**. Given a final model, I run a **single pipeline** for **pre-processing and modeling** that emulates a production environment, where the Titanic test set is used as if it were future data never before seen.
+
+## Part 1 Sections
+
+In the **Contents** we can see how **Part 1** is divided into several sections. After a **preliminary EDA** we spend most of our time **pre-processing** the data, as usual, and then spend a fair amount of time exploring it through **visualizations**. I tried to organize this exploration into **univariate, bivariate,** and **multivariate** sub-sections, fully aware that the number of possible combinations quickly explodes even with a few attributes, so this exploration is still mostly ad hoc.
 
 
 ---
 
-# 1. Basic EDA
+# Preliminary EDA
 
-First we load the training data. We will not look at the test data until it is time to test; failing to do so would consist in *data snooping*. In the spirit of the Titanic Kaggle kernel, I added the Kaggle Titanic datasets a level up on an `input/` directory.
+First we load the training data and look at its structure, summary, top and bottom rows. We will not look at the test data until it is time to test; failing to do so would consist in *data snooping*. In the spirit of the Titanic Kaggle kernel, I added the Kaggle Titanic datasets a level up on an `input/` directory. 
 
-```{r}
+```{r echo=FALSE}
 # Load training set 
-rm(list=ls())
+rm(list=ls()) 
 train <- read.csv("../input/train.csv", na.strings="")
-```
-
-Basic EDA consists of looking at the dataset's structure, summary, top rows, and bottom rows:
-
-```{r}
 str(train)
 ```
 
-There are 891 passengers and 11 attributes (PassengerId is just an index) for each passenger. 
 
-* **Survived**, coded as integer, is a binary indicator and the target outcome or dependent variable we are predicting.
-* **Pclass**, coded as intger, is an ordinal variable for the passenger class; we could change it to a factor variable with three levels (1st, 2nd, and 3rd class). 
-* **Name** has one level per passenger and a common approach would be to extract the title ('Mr.','Mrs.') from it so as to cull down the number of levels; we will also consider name length.
-* **Sex** is coded as categorical and could be transformed into an indicator such as `is_male`. 
-* **Age** is numeric and seems to have missing values.
-* **SibSp** is ordinal (# of siblings or spouses) and could be converted from integer to factor.
-* **Parch** is ordinal (# of parents or children) and could be converted to factor; it could be combined with SibSp to represent "# of relatives".
-* **Ticket** is categorical with 681 levels and needs to be culled down if it provides useful information.
-* **Fare** is numerical and a proxy for wealth or social status.
-* **Cabin** is categorical with 147 levels and needs to be culled down, perhaps by extracting the deck.
-* **Embarked** is categorical with 3 levels, C for Cherbourg, Q for Queenstown, S for Southhampton, the three ports of embarkation.
+There are 891 passengers and 11 attributes (PassengerId is just an index not an attribute of a passenger). The attributes are:
 
-A summary would be more useful if certain variables were converted to factor right away. Because `PassengerId` is just an index we can drop it, but first check that is has no duplicates or non-stepwise values ("trust but verify!"):
+* **Survived**, integer, binary indicator (Survived = 1) and the target outcome or dependent variable we are to predict.
+* **Pclass**, integer, an ordinal variable for the passenger class.
+* **Name**, Factor w/ 891 levels (one level per passenger).
+* **Sex**, Factor with two levels: "female", "male".
+* **Age**, numerical, has 177 missing values coded as `NA`.
+* **SibSp**, integer, an ordinal variable for the number of siblings or spouses.
+* **Parch**, integer, an ordinal variable for the number of parents or children.
+* **Ticket**, Factor w/ 681 levels.
+* **Fare**, numerical, is in Pounds Sterling, a proxy for wealth or social status.
+* **Cabin**, Factor w/ 147 levels, has 687 missing values.
+* **Embarked**, Factor w/ 3 levels: "C", "Q", and "S" for the port of embarkation (Cherbourg, Queenstown, and Southhampton), has 2 missing values.
 
+---
 
-```{r}
-# trust but verify
-sum(duplicated(train$PassengerId)) == 0
-sum(train$PassengerId == 1:891) == 891
-```
 
 ```{r}
-# drop PassengerId and convert appropriate variables to factor
-train$PassengerId <- NULL
-train$SurvivedFac <- factor(train$Survived) # for plotting as categorical outcome
-train$SurvivedNum <- as.numeric(train$Survived) # for plotting as numerical outome
-train$Survived <- NULL # drop original
-train$Pclass <- factor(train$Pclass)
-train$SibSp <- factor(train$SibSp)
-train$Parch <- factor(train$Parch)
-# summary
+# Preliminary summary
 summary(train)
 ```
 
+This first summary of our data is not very useful and helps us determine how to proceed with data pre-processing, converting appropriate variables into categorical format, cleaning up variables and imputing missing values as needed. I will refrain from commenting on the data until pre-processing is mostly finished.
 
-Note the high number of missing values in `Age` and `Cabin`. The 2 NAs in `Embarked` can be easily dealt with by filling in with the most common port of embarkation. Class representation in `Survived`,`Pclass`, and `Sex` appear to be relatively trouble free, yet in `SibSp`, `Parch`, and `Embarked` we see more skewed distributions. `Fare` is skewed as well.
+The large number of missing values in `Cabin` and `Age` will need to be dealt with. The 2 missing values in `Embarked` can be filled in with the most common port of embarkation. 
 
+A look at the dataset helps us get a feel for it:
 
 ```{r}
 head(train)
@@ -92,26 +97,67 @@ head(train)
 tail(train)
 ```
 
+---
 
-EDA also consists of plotting, but before that we should cleanup a bit our messy data, since plotting `Name` and `Ticket` as they are would be useless, for example. 
+# Pre-Processing 1: PassengerId, Survived, Pclass
+
+
+## PassengerId
+
+`PassengerId` is just an index. Since R keeps a row index and we shouldn't use this variable for modeling as it provides no information, we drop it, but first check that is has no duplicates and has stepwise values to ensure data integrity (see "trust but verify" code chunk in the Appendix).
+
+
+```{r include=FALSE}
+# PassengerId: Trust but Verify
+sum(duplicated(train$PassengerId)) == 0 # no duplicates
+sum(train$PassengerId == 1:891) == 891 # stepwise values
+# drop PassengerId
+train$PassengerId <- NULL
+```
+
+
+## Survived
+
+`Survived` is dropped and `SurvivedFac` (as categorical outcome) and `SurvivedNum` (as a continuous range from 0 to 1, indicating probabilities) are created.
+
+```{r}
+# Survived
+train$SurvivedFac <- factor(train$Survived) # for plotting as categorical outcome
+train$SurvivedNum <- as.numeric(train$Survived) # for plotting as numerical outome
+train$Survived <- NULL # drop original
+```
+
+
+## Pclass
+
+`Pclass` is dropped and `PclassFac` (as categorical) and `PclassNum` (as ordinal) are created. The former is useful for plotting, the latter for machine learning.
+
+```{r}
+# Pclass
+train$PclassFac <- ifelse(train$Pclass==1, "1st Class", ifelse(train$Pclass==2, "2nd Class", "3rd Class"))
+train$PclassNum <- train$Pclass
+train$Pclass <- NULL
+```
+
 
 ---
 
-# 2. Preliminary Data Cleaning
+# Pre-Processing 2: Name, Sex
 
-* Cleaning up Name
+The `Name` attribute is not indicative of a person's survival, yet information can be extracted from it such as titles and name lengths, which might contain some predictive power. 
 
-A `Title` attribute would be much more useful. First we use regex to extract these titles:
+A `Title` attribute can be created by extracting titles with regular expresssions.
+
+## Title
 
 ```{r}
+# Create Title attribute
 train$Title <- vector("character",length=nrow(train))
 for (i in 1:nrow(train)) {
 	x <- as.character(train$Name[i])
 	m <- regexec(",(\\s+\\w+)+\\.", x) 
 	train$Title[i] <- unlist(strsplit(unlist(regmatches(x,m))," "))[2]
 }
-# fixing a particular case
-train$Title[train$Title == "the"] <- "the Countess"
 # looking at unique titles
 unique(train$Title)
 ```
@@ -119,30 +165,34 @@ unique(train$Title)
 
 There are 17 levels which seem unnecessary as some of these titles are specific and rare, so we can bin them into two rare categories, one for males and one for females, since the probability of survival is highly dependent on gender. 
 
-Note that some decisions are simplifications, there is a female doctor (Dr. Alice Leader, who survived) yet I assigned 'Dr.' to the mostly rare male title category. 
+I will not fix the title **the**, which stands for **the Countess**, since any specific fixes will not be generalizable to any future data (aka the test set) in production. Instead, I am hoping no other specific male titles (such as **the Count**) will pop up in the test data and will use the above rare male titles as baseline for the rare cases, all other rare cases will end up in the rare female bucket.
 
+Note that some decisions are simplifications, there is a female doctor (Dr. Alice Leader) yet I assigned 'Dr.' to the rare male title category since at that time most doctors were males.
 
 
 ```{r}
-rareMale <- c("Don.","Rev.","Dr.","Major.","Master.", "Sir.","Col.","Capt.","Jonkheer.")
-rareFemale <- c("Mme.","Ms.","Lady.","Mlle.","the Countess")
+# Clean up Title
+common_titles <- c("Mr.", "Mrs.", "Miss.")
+rare_male <- c("Don.","Rev.","Dr.","Major.","Master.", "Sir.","Col.","Capt.","Jonkheer.")
 for (i in 1:nrow(train)) {
-	train$Title[i] <- ifelse(train$Title[i] %in% rareMale, "rareMale",
-					  ifelse(train$Title[i] %in% rareFemale, "rareFemale", train$Title[i]))
+	train$Title[i] <- ifelse(train$Title[i] %in% common_titles, train$Title[i], # do not replace
+	                         ifelse(train$Title[i] %in% rare_male, "rareMale", "rareFemale"))
 }
 # unique titles
 unique(train$Title)
 ```
 
-Before dropping name entirely, we can informally test a common assumption that the length of a name is associated positively with higher socio-economic status and therefore survivability. 
+Before dropping name entirely, we can informally test a common assumption that the length of a name is associated positively with higher socio-economic status and therefore survivability. (See Appendix for the `NameLength` code.)
 
-```{r}
+## NameLength
+
+```{r echo=FALSE}
 # create NameLength attribute
 train$NameLength <- vector("numeric", nrow(train))
 for (i in 1:nrow(train)) {
 	train$NameLength[i] <- nchar(as.character(train$Name)[i])
 }
-# see whether this attribute has any meat to it
+# see whether NameLength is useful
 plot(train$NameLength, train$Fare, 
 	pch=19, col=rgb(0,0,1,alpha=0.2),
 	xlab="Name Length (chars)", 
@@ -154,15 +204,51 @@ abline(lm(train$Fare ~ train$NameLength), col="red")
 While the evidence isn't particularly strong, we might as well keep `NameLength` in the mix just to see whether it improves modeling later on. Now we can drop `Name`.
 
 
-```{r}
-# dropping Name 
+```{r include=FALSE}
+# drop Name 
 train$Name <- NULL 
 ```
 
 
-* Cleaning up Ticket
+## Sex: GenederFac, IsMale
+
+The variable `Sex` is usually best represented as a binary indicator for a given gender in machine learning, however, for plotting purposes we keep a categorical representation, creating `GenderFac` and `IsMale` wherein Male=1.
 
 ```{r}
+train$GenderFac <- train$Sex # factor for plotting
+train$IsMale <- ifelse(train$Sex=="male",1,0) # indicator for ML
+train$Sex <- NULL # drop original
+```
+
+
+
+---
+
+# Pre-Processing 3: SibSp, Parch
+
+Since both `SibSp` and `Parch` have skewed distributions (as we will see in the Univariate Graphical EDA section) we create Log versions of them, and then convert them to factors for plotting and EDA.
+
+
+```{r}
+# Logs of SibSp and Parch
+train$SibSpLog <- log(train$SibSp)
+train$ParchLog <- log(train$Parch)
+# Change SibSp and Parch to factor
+train$SibSp <- factor(train$SibSp)
+train$Parch <- factor(train$Parch)
+```
+
+
+---
+
+# Pre-Processing 4: Ticket, Fare
+
+## Ticket
+
+After cleaning `Ticket` (see Appendix), the distribution is as follows:
+
+```{r include=FALSE}
+# Cleaning up Ticket
 train$Ticket <- as.character(train$Ticket) 
 # removing ending digits 
 train$TicketClean <- vector("character", nrow(train))
@@ -184,6 +270,9 @@ train$TicketClean[i] <- ifelse(train$TicketClean[i] == "STONO2", "SOTONO2",
 					 ifelse(train$TicketClean[i] == "SCPari", "SCPARIS",
 					 ifelse(train$TicketClean[i] == "", "Other", train$TicketClean[i])))))
 }
+```
+
+```{r}
 # look at distribution within levels
 table(train$TicketClean)
 ```
@@ -191,19 +280,36 @@ table(train$TicketClean)
 
 Since the "Other" level is so overbearingly dominant and there are too many unrepresented categories, it is unlikely that a lot of useful information can be gathered from `Ticket` so we just drop this attribute altogether.
 
-```{r}
+```{r include=FALSE}
+# drop Ticket feature
 train$Ticket <- NULL
 train$TicketClean <- NULL
-# let's look at the data now to get our bearings
-head(train)
 ```
 
-* Cleaning up Cabin
 
-Cabin has 687 NAs and 147 levels yet cabin locations might be important in determining survivability, since the accident happened late at night when people were mostly in their cabins, and lower-letter cabins were near the deck while higher-letter cabins were near the keel where the ship hit the iceberg.
+## Fare
 
+Since `Fare` has a skewed distribution (as we will see in the Univariate Graphical EDA section) we create a `FareLog` variable which will help with linear models.
 
 ```{r}
+train$FareLog <- log(train$Fare)
+```
+
+
+
+---
+
+
+# Pre-Processing 5: Cabin, Embarked
+
+
+## Cabin
+
+`Cabin` has 687 NAs and 147 levels yet cabin locations might be important in determining survivability, since the accident happened late at night when people were mostly in their cabins, and lower-letter cabins were near the deck while higher-letter cabins were near the keel where the ship hit the iceberg.
+
+
+```{r echo=FALSE}
+# Cleaning up Cabin
 train$CabinClean <- vector("character", nrow(train))
 for (i in 1:nrow(train)) {
   # ID digits and white space
@@ -214,325 +320,46 @@ for (i in 1:nrow(train)) {
 	high_cabins <- toupper(letters[letters >"f"])
 	if (train$CabinClean[i] %in% high_cabins) train$CabinClean[i] <- "F"
 }
-table(train$CabinClean)
-```
-
-
-```{r}
 # replace old Cabin
 train$Cabin <- factor(train$CabinClean)
 train$CabinClean <- NULL
+```
+
+```{r}
 summary(train$Cabin)
 ```
 
 We now have good representations in all cabins and not too many levels but still a lot of missing values, we'll deal with those later as needed.
 
----
-
-# 3. Graphical Exploratory Data Analysis
-
-Now that we have the data in a basic shape for graphical EDA, we can try understanding the underlying distributions and associations of this training set better, remembering that this is just a sample so our findings are not necessarily representative of the truth, albeit in our case the sample is quite large, but I am always careful about making strong conclusions about a population when using sample data.
 
 
-## Univariate EDA
+## Embarked
 
-In this section we look at feature distributions one at a time. A few quick plots of the class imbalances in Survived, Passenger Class, and Sex give us a better understanding of these attributes:
+We just the letters with actual port names for ease in plotting.
 
-
-```{r fig.height=4.5, fig.width=8.5}
-par(mfrow=c(1,3))
-plot(train$SurvivedFac,main="Survived or Not", col=c("red","chartreuse3"))
-plot(train$Pclass,main="Passenger Class", col=c("chartreuse3", "cadetblue3", "chocolate1"))
-plot(train$Sex,main="Sex", col=c("palevioletred1","cadetblue2"))
+```{r}
+train$Embarked <- ifelse(train$Embarked=="C","Cherbourg",
+                         ifelse(train$Embarked=="Q","Queensland","Southhampton"))
 ```
 
-Majorities did not survive, were in class 3 and were males, so being female and higher class is an indicator of survival, as expected.
-
-```{r fig.height=4.5, fig.width=8.5}
-par(mfrow=c(1,3))
-plot(train$Cabin, main="Cabin", col=terrain.colors(6))
-plot(train$Embarked, main="Port Embarked", col=terrain.colors(3))
-train$Title <- factor(train$Title)
-plot(train$Title, main="Titles", col=terrain.colors(5))
-```
-
-
-Most people were in Cabin C and yet the distribution is not too skewed, while a vast majority embarked in Southhampton. Most titles are Mr., and rare female titles are barely represented.
-
-Tackling the distributions of the two numerical variables `Age` and `Fare`:
-
-```{r fig.height=4.5, fig.width=8}
-par(mfrow=c(1,2))
-hist(train$Age, xlab='Age', main="Ages", ylab="", col=rgb(0,0.4,0.4,0.4))
-hist(train$Fare, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
-hist(log(train$Fare)*max(train$Fare)/8, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
-legend(250, 450, pch=15, col=rgb(0,0,1,0.3), "log distribution")
-```
-
-
-Ages are as expected roughtly normally distributed, with some older folks positively skewing the distribution. We will consider binning this variable and selecting age groups such as Children, Teenagers, Adults, and Elderly, after imputation of missing values. 
-
-Fares are, as expected, quite skewed, so we could consider taking the log (in blue, scaled up for ease of comparison).
-
-
-```{r fig.height=5, fig.width=8.5}
-SS <- table(train$SibSp)
-PC <- table(train$Parch)
-counts <- rbind(SS,PC)
-rownames(counts) <- c("Sibling or Spouse", "Parent or Child")
-par(mfrow=c(1,1))
-barplot(counts, main="Number of Siblings/Spouses vs Parents/Children",
-  xlab="Number of Relatives", ylab="", col=c(rgb(0.2,0.4,0,0.3),rgb(0.2,0,0.5,0.3)),
-  legend = rownames(counts), beside=TRUE)
-```
-
-Since the distributions are similarly skewed, we could potentially combine the Siblings/Spouse and Parents/Children attributes into a single "Number of Relatives" attribute.
 
 ---
 
-## Bivariate EDA 
+# Pre-Processing 6: Age
 
+[NOTE: REDO THIS SECTION ENTIRELY, USE AGE AS CONTINUOUS, RECONSIDER DISCRETE CASE LATER]
 
-Looking at our variables again:
+Pre-Processing `Age` had to wait until the end since we will be doing some modeling to impute missing values and needed other variables to be relatively clean before the modeling stage.
 
-```{r}
-names(train)
-```
+The `Age` variable can be treated as continuous or discrete. Before moving on with Graphical EDA I am creating an `AgeFac` variable that bins ages into the following groups: `Child` ($0-12$) `Teen` ($13-19$), `YoungAdult` ($20-35$), `MiddleAged` ($36-55$), and `Elderly` ($56-80$). 
 
-There are $(n * (n-1)) / 2 = (11 * 10)/2 = 55$ possible bivariate combinations (regardless of order) of our 11 variables. We can compute bivariate and higher-order combinations with the `combn()` function:
 
-```{r}
-combn(11, 2)
-```
+## Imputing Age
 
-One way to plot all of these at once is using a scatterplot matrix. The `plot()` function will do this in R, when passed a **data frame**. Since it is hard to visualize 55 combinations, let's narrow down to a few choice attributes:
+Since there are many missing values, we need to explore an imputation strategy. The simple method of using a mean or median age would unnecessarily inflate the `YoungAdult` variable, as seen in the right plot below.
 
 
-```{r fig.height=6, fig.width=8.5}
-chosen <- c("SurvivedNum", "Pclass", "Sex","Age","Fare","Embarked")
-plot(train[,colnames(train) %in% chosen])
-```
-
-
-Notice how numerical attributes (`Age` and `Fare`) combine well into a scatterplot, yet other attributes are not plotted exactly as we might want. Since the problem space will only increase with higher-dimensional combinations, we select only a few choice pairs to consider. One approach is to compare each of the other ten features with our `Survived` outcome.
-
-
-## Interactions with Survival
-
-* 1 Survived & Pclass
-
-A mosaic plot shows neatly this interaction:
-
-```{r fig.height=4, fig.width=7}
-# 1. Survived and Pclass 
-suppressMessages(require(ggplot2))
-suppressMessages(require(ggmosaic))
-Survival <- ifelse(train$SurvivedNum==1,"yes","no") # for ggplot
-PclassFac <- factor(train$Pclass)
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, PclassFac),fill=Survival)) +
-   labs(x='Passenger Class', y='', title='Tianic Survival by Passenger Class')
-```
-
-
-It would seem that folks in first class and second class had it better than those in third class. What the mosaic plot shows is also the comparative size of the populations of these three classes (in our training sample of course).
-
-
-* 2 Survived & Sex:
-
-```{r fig.height=4, fig.width=6}
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, Sex),fill=Survival)) +
-   labs(x='Sex', y='', title='Tianic Survival by Gender')
-
-```
-
-Females were much more likely to survive, and the majority of the passengers was male.
-
-* 3 Survived & Age
-
-```{r fig.height=5, fig.width=8.5}
-plot(train$SurvivedNum~train$Age, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Age",ylab="Probability of Survival", xlab="Age")
-linmod=lm(SurvivedNum~Age,data=train)
-abline(linmod, col="green", lwd=2, lty=2)
-g=glm(SurvivedNum~Age,family='binomial',data=train)
-curve(predict(g,data.frame(Age=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-```
-
-As expected, the probability of survival declines with age, as shown by the linear fit, which is quite similar to the logistic fit (a sinusoidal curve) as survival is not rare and the distribution of ages is roughly normal (as we noted in the univariate EDA), so we observe mid-range probabilities.
-
-
-* 4 Survived & SibSp
-
-
-```{r fig.height=5, fig.width=8.5}
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, SibSp),fill=Survival)) +
-   labs(x='Number of Siblings/Spouses', y='', 
-   title='Tianic Survival by Number of Siblings or Spouses')
-```
-
-
-Having one sibling or spouse is most indicative of survival, followed by two, then none, then four and up. The probability of survival is very low for higher numbers but our confidence that this is the case should decrease because there is gradually less evidence for this effect, given the smaller sample sizes as shown in the mosaic plot.
-
-
-* 5 Survived & Parch
-
-```{r fig.height=5, fig.width=8.5}
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, Parch),fill=Survival)) +
-   labs(x='Number of Parents/Children', y='', 
-   title='Tianic Survival by Number of Parents or Children')
-```
-
-Similar results to those observed in the previous plot are seen, except for the higher probability of survival for someone with 3 (presumably) children, yet again, since the sample sizes are small, we should not take this finding too seriously.
-
-When **feature engineering** we will take into account these findings to select the best method to create our indicator variables.
-
-   
-* 6 Survived & Fare 
-
-
-```{r fig.height=5, fig.width=8.5}
-plot(train$SurvivedNum~train$Fare, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Fare",ylab="Probability of Survival", xlab="Fare (Pounds Sterling)")
-linmod=lm(SurvivedNum~Fare,data=train)
-abline(linmod, col="green", lwd=1, lty=2)
-g=glm(SurvivedNum~Fare,family='binomial',data=train)
-curve(predict(g,data.frame(Fare=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(200,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-```
-
-Unlike the plot of Survival by Age, we observe extreme probabilities given the skewed distribution of Fare, which shows how survival is increasingly more probable the higher the fare.
-
-We can explore creating a log of Fare which could be used in modeling, as some models (i.e. linear models) would benefit from this logged variable as opposed to the original Fare attribute.
-
-```{r fig.height=5, fig.width=8.5}
-# creating Log of Fare attribute
-train$FareLog <- log(train$Fare+1) # adding a pound to avoid Inf log values for 0 fares
-# plot
-plot(train$SurvivedNum~train$FareLog, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Log of Fare",
-    ylab="Probability of Survival", xlab="Fare in Log(Pounds Sterling)")
-linmod=lm(SurvivedNum~FareLog,data=train)
-abline(linmod, col="green", lwd=1, lty=2)
-g=glm(SurvivedNum~FareLog,family='binomial',data=train)
-curve(predict(g,data.frame(FareLog=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-```
-
-
-The `FareLog` variable will indeed be useful for linear modeling.
-
-
-* 7 Survived & Cabin
-
-Since our data has so many missing values for cabin, our confidence in the results of this plot should be decreased.
-
-```{r fig.height=5, fig.width=8.5}
-# creating a copy of train with no missing values for cabin
-train2 <- train[!is.na(train$Cabin),]
-Survival2 <- ifelse(train2$SurvivedNum==1,"yes","no") 
-ggplot(data=train2) +
-   geom_mosaic(aes(x=product(Survival2, Cabin),fill=Survival2)) +
-   labs(x='Cabin', y='', title='Tianic Survival by Cabin')
-```
-
-
-It would appear that perhaps cabin is not as associated with survivability as we had hoped for, given that A cabins are on the deck and F cabins near the keel where the ship hit the iceberg.
-
-
-* 8 Survived & Embarked 
-
-```{r fig.height=5, fig.width=8.5}
-PortEmbarked <- ifelse(train$Embarked=="C","Cherbourg", 
-                ifelse(train$Embarked=="Q","Queenstown", "Southampton"))
-dat <- data.frame(Survival, PortEmbarked)
-
-ggplot(data=dat) +
-   geom_mosaic(aes(x=product(Survival, PortEmbarked),fill=Survival)) +
-   labs(x='Port of Embarkation', y='', 
-   title='Tianic Survival by Port of Embarkation')
-```
-
-There seems to be some evidence that having embarked in Southhampton is an indicator of higher probability of survival. 
-
-We can explore port of embarkation in a more nuanced manner by considering the fares paid at each port, and whether survivability appears to me more associated with the fare or the port embarked. We use the log of fares since it would be hard to observe any differences in the boxplots given the highly skewed distribution of fare.
-
-
-```{r fig.height=5, fig.width=9}
-dat$FareLog <- train$FareLog
-dat <- dat[!is.na(dat$PortEmbarked),]
-ggplot(data=dat) +
-   geom_boxplot(aes(x=PortEmbarked,y=FareLog, fill=Survival)) +
-   labs(x='Port of Embarkation', y='Fare in Log(Pounds Sterling)', 
-   title='Titanic Survival by Port of Embarkation and Fare')
-```
-
-
-Several curiosities pop out in this plot. First, Southhampton's higher survivability is not entirely associated with fare, since Cherbourg seems to have a higher survivability when considering fare. Second, Queenstown's seems to go against common sense in that higher fares aren't necessarily associated with higher survivability. Lastly, the difference in survivability according to fare varies from port to port, for example, we see a more pronounced difference in Cherbourg, and almost no difference in Queenstown.
-
-
-
-* 9 Survival and Title 
-
-```{r fig.height=5, fig.width=9}
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, Title),fill=Survival)) + 
-   labs(x='Title', y='',
-   title='Tianic Survival by Title') + 
-   theme(axis.text.x = element_text(angle = 90))
-```
-
-Title can be seen as a proxy for gender and as we've seen, females survived a lot better than males. It is worth keeping this attribute as it shows some granularity in what kinds of folks survived better within gender groups, i.e. those with rare titles.
-
-
-* 10. Survived and NameLength
-
-```{r fig.height=4.5, fig.width=8}
-plot(train$SurvivedNum~train$NameLength, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Name Length",
-    ylab="Probability of Survival", xlab="Name Length (chars)")
-linmod=lm(SurvivedNum~NameLength,data=train)
-abline(linmod, col="green", lwd=1, lty=2)
-g=glm(SurvivedNum~NameLength,family='binomial',data=train)
-curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-```
-
-
-Longer names do appear to have some association with higher probabilities of survival so we are also keeping this feature. It might just be capturing the association of longer names and wealth, but since in machine learning we do not care about multicollinearity issues, we will test whether to keep this attribute or not during our feature selection modeling phase.
-
----
-
-## Multi-dimensional EDA
-
-The higher-dimensional problem space of combinations with 11 variables is as follows:
-
-```{r}
-# Combinations of 3 or more variables quickly explode
-vars <- 1:11
-for (i in 2:9) {
-	num <- length(combn(vars,i))/i
-	print(paste("There are ", num, "combinations of 11 variables taken", i, "at a time."))
-}
-```
-
-The number of combinations is complementary (adding up to 11): 6 = 5, 7 = 4, etc., so when considering combinations of 9 variables, we are just considering the complement of 2 variables.
-
-Of the 165 trivariate combinations, 45 alone are possibilities that interact with our outcome `Survival` -- clearly too many to consider, so our approach will by means of necessity be minimal and select, but I wanted to make the size of the entire enterprise known.
-
-
-## Age Categories and Imputation
-
-To make matters worse, I am breaking down the `Age` continuous variable into four new features by age group: `Child` ($0-12$) `Teen` ($13-19$), `YoungAdult` ($20-35$), `MiddleAged` ($36-55$), and `Elderly` ($56-80$). While some of these age groups might seem young by 2019's standards, at the time of the Titanic's maiden voyage, I believe they more accurately reflect the respective age groups, as evidenced by the distribution below. This breakdown will help later with machine learning but also help EDA in exploring age groups in a discrete manner. 
-
-Before we actually create these features, however, we need to impute the missing values. One strategy is to use a mean or median age, which would unnecessarily inflate the `YoungAdult` variable, as seen in the second plot below.
-
-
-```{r fig.height=4.5, fig.width=9.5}
+```{r fig.height=4.5, fig.width=9.5, echo=FALSE}
 Child <- sum(ifelse(train$Age > 0 & train$Age < 13,1,0),na.rm=TRUE)
 Teen <-  sum(ifelse(train$Age > 12 & train$Age < 20,1,0),na.rm=TRUE)
 YoungAdult <- sum(ifelse(train$Age > 19 & train$Age < 36,1,0),na.rm=TRUE)
@@ -581,7 +408,7 @@ age_train <- yesAge[age_bool, ]
 age_test <- yesAge[!age_bool, colnames(yesAge) != "Age"]
 # fit model
 age_mod <- tree(Age~.,data=age_train)
-# plot tree
+#cplot tree
 plot(age_mod)
 text(age_mod, pretty=0)
 ```
@@ -648,8 +475,6 @@ varImpPlot(rf_age)
 ```
 
 
-
-
 ```{r}
 set.seed(1)
 yesAge <- yesAge[,colnames(yesAge) != "Cabin"]
@@ -663,7 +488,7 @@ sum(is.na(train$Age)) == 0
 Confirming we have no missing values in `Age`, we now plot the new distribution of this variable:
 
 
-```{r fig.height=4.5, fig.width=9.5}
+```{r fig.height=4.5, fig.width=9.5, echo=FALSE}
 Child <- sum(ifelse(train$Age > 0 & train$Age < 13,1,0))
 Teen <-  sum(ifelse(train$Age > 12 & train$Age < 20,1,0))
 YoungAdult <- sum(ifelse(train$Age > 19 & train$Age < 36,1,0))
@@ -695,6 +520,343 @@ train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
                     ifelse(train$Age > 35 & train$Age < 56, "MiddleAged", "Elderly"))))
 str(train)
 ```
+
+---
+
+
+## Summary after pre-processing
+
+
+```{r}
+# Post-Processing summary
+summary(train)
+```
+
+
+Class representation in `Survived`,`Pclass`, and `Sex` appear to be relatively trouble free, yet in `SibSp`, `Parch`, and `Embarked` we see more skewed distributions. `Fare` is skewed as well. We proceed with graphical explorations of the data.
+
+
+
+
+---
+
+# Univariate Graphical EDA 
+
+Now that we have the data in a basic shape for graphical EDA, we can try understanding the underlying distributions and associations of this training set better, remembering that this is just a sample so our findings are not necessarily representative of the truth, albeit in our case the sample is quite large, but I am always careful about making strong conclusions about a population when using sample data.
+
+
+In this section we look at feature distributions one at a time. A few quick plots of the class imbalances in **Survived, Passenger Class,** and **Sex** give us a better understanding of these attributes:
+
+
+```{r fig.height=4, fig.width=8, echo=FALSE}
+par(mfrow=c(1,3))
+# Survived, Pclass, Sex
+plot(train$SurvivedFac,main="Survived", col=c("red","chartreuse3"))
+plot(train$Pclass,main="Passenger Class", col=c("chartreuse3", "cadetblue3", "chocolate1"))
+plot(train$Sex,main="Sex", col=c("palevioletred1","cadetblue2"))
+```
+
+
+
+Majorities did not survive, purchased 3rd class tickets, and were males, so being female and higher class is an indicator of survival, as expected.
+
+```{r fig.height=4, fig.width=8, echo=FALSE}
+par(mfrow=c(1,3))
+plot(train$Cabin, main="Cabin", col=terrain.colors(6))
+plot(train$Embarked, main="Port Embarked", col=terrain.colors(3))
+train$Title <- factor(train$Title)
+plot(train$Title, main="Titles", col=terrain.colors(5))
+```
+
+
+Most people were in Cabin C and yet the distribution is not too skewed, while a vast majority embarked in Southhampton. Most titles are Mr., and rare female titles are barely represented.
+
+Tackling the distributions of the two numerical variables `Age` and `Fare`:
+
+```{r fig.height=4.5, fig.width=8, echo=FALSE}
+par(mfrow=c(1,2))
+hist(train$Age, xlab='Age', main="Ages", ylab="", col=rgb(0,0.4,0.4,0.4))
+hist(train$Fare, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
+hist(log(train$Fare)*max(train$Fare)/8, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
+legend(250, 450, pch=15, col=rgb(0,0,1,0.3), "log distribution")
+```
+
+
+Ages are as expected roughtly normally distributed, with some older folks positively skewing the distribution. We will consider binning this variable and selecting age groups such as Children, Teenagers, Adults, and Elderly, after imputation of missing values. Fares are, as expected, quite skewed, so we could consider taking the log (blue distribution above, scaled up for ease of comparison).
+
+
+
+
+```{r fig.height=4.5, fig.width=8, echo=FALSE}
+# 
+SS <- table(train$SibSp)
+PC <- table(train$Parch)
+counts <- rbind(SS,PC)
+rownames(counts) <- c("Sibling or Spouse", "Parent or Child")
+par(mfrow=c(1,1))
+barplot(counts, main="Number of Siblings/Spouses vs Parents/Children",
+  xlab="Number of Relatives", ylab="", col=c(rgb(0.2,0.4,0,0.3),rgb(0.2,0,0.5,0.3)),
+  legend = rownames(counts), beside=TRUE)
+```
+
+Since the distributions are similarly skewed, we could potentially combine the Siblings/Spouse and Parents/Children attributes into a single "Number of Relatives" attribute.
+
+---
+
+# Bivariate Graphical EDA 
+
+
+Looking at our variables again:
+
+```{r}
+names(train)
+```
+
+There are $(n * (n-1)) / 2 = (11 * 10)/2 = 55$ possible bivariate combinations (regardless of order) of our 11 variables. We can compute bivariate and higher-order combinations with the `combn()` function:
+
+```{r}
+# combinations
+head(t(data.frame(combn(11, 2))))
+tail(t(data.frame(combn(11, 2))))
+```
+
+One way to plot all of these at once is using a scatterplot matrix. The `plot()` function will do this in R, when passed a **data frame**. Since it is hard to visualize 55 combinations, let's narrow down to a few choice attributes:
+
+
+```{r fig.height=6, fig.width=8.5}
+# Scatterplot matrix
+chosen <- c("SurvivedNum", "Pclass", "Sex","Age","Fare","Embarked")
+plot(train[,colnames(train) %in% chosen])
+```
+
+
+Notice how numerical attributes (`Age` and `Fare`) combine well into a scatterplot, yet other attributes are not plotted exactly as we might want. Since the problem space will only increase with higher-dimensional combinations, we select only a few choice pairs to consider. One approach is to compare each of the other ten features with our `Survived` outcome.
+
+
+## Interactions with Survival
+
+* 1 Survived & Pclass
+
+A mosaic plot shows neatly this interaction:
+
+```{r fig.height=4, fig.width=7, echo=FALSE}
+# 1. Survived and Pclass 
+suppressMessages(require(ggplot2))
+suppressMessages(require(ggmosaic))
+Survival <- ifelse(train$SurvivedNum==1,"yes","no") # for ggplot
+PclassFac <- factor(train$Pclass)
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(Survival, PclassFac),fill=Survival)) +
+   labs(x='Passenger Class', y='', title='Tianic Survival by Passenger Class')
+```
+
+
+It would seem that folks in first class and second class had it better than those in third class. What the mosaic plot shows is also the comparative size of the populations of these three classes (in our training sample of course).
+
+
+* 2 Survived & Sex
+
+```{r fig.height=4, fig.width=6, echo=FALSE}
+# 2 Survived & Sex
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(Survival, Sex),fill=Survival)) +
+   labs(x='Sex', y='', title='Tianic Survival by Gender')
+```
+
+Females were much more likely to survive, and the majority of the passengers was male.
+
+* 3 Survived & Age
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 3 Survived & Age
+plot(train$SurvivedNum~train$Age, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Age",ylab="Probability of Survival", xlab="Age")
+linmod=lm(SurvivedNum~Age,data=train)
+abline(linmod, col="green", lwd=2, lty=2)
+g=glm(SurvivedNum~Age,family='binomial',data=train)
+curve(predict(g,data.frame(Age=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+As expected, the probability of survival declines with age, as shown by the linear fit, which is quite similar to the logistic fit (a sinusoidal curve) as survival is not rare and the distribution of ages is roughly normal (as we noted in the univariate EDA), so we observe mid-range probabilities.
+
+
+* 4 Survived & SibSp
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 4 Survived & SibSp
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(Survival, SibSp),fill=Survival)) +
+   labs(x='Number of Siblings/Spouses', y='', 
+   title='Tianic Survival by Number of Siblings or Spouses')
+```
+
+
+Having one sibling or spouse is most indicative of survival, followed by two, then none, then four and up. The probability of survival is very low for higher numbers but our confidence that this is the case should decrease because there is gradually less evidence for this effect, given the smaller sample sizes as shown in the mosaic plot.
+
+
+* 5 Survived & Parch
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 5 Survived & Parch
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(Survival, Parch),fill=Survival)) +
+   labs(x='Number of Parents/Children', y='', 
+   title='Tianic Survival by Number of Parents or Children')
+```
+
+Similar results to those observed in the previous plot are seen, except for the higher probability of survival for someone with 3 (presumably) children, yet again, since the sample sizes are small, we should not take this finding too seriously.
+
+When **feature engineering** we will take into account these findings to select the best method to create our indicator variables.
+
+   
+* 6 Survived & Fare 
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 6 Survived & Fare
+plot(train$SurvivedNum~train$Fare, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Fare",ylab="Probability of Survival", xlab="Fare (Pounds Sterling)")
+linmod=lm(SurvivedNum~Fare,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~Fare,family='binomial',data=train)
+curve(predict(g,data.frame(Fare=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(200,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+Unlike the plot of Survival by Age, we observe extreme probabilities given the skewed distribution of Fare, which shows how survival is increasingly more probable the higher the fare.
+
+We can explore creating a log of Fare which could be used in modeling, as some models (i.e. linear models) would benefit from this logged variable as opposed to the original Fare attribute.
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 6 Survived & Log(Fare)
+train$FareLog <- log(train$Fare+1) # adding a pound to avoid Inf log values for 0 fares
+# plot
+plot(train$SurvivedNum~train$FareLog, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Log of Fare",
+    ylab="Probability of Survival", xlab="Fare in Log(Pounds Sterling)")
+linmod=lm(SurvivedNum~FareLog,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~FareLog,family='binomial',data=train)
+curve(predict(g,data.frame(FareLog=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+
+The `FareLog` variable will indeed be useful for linear modeling.
+
+
+* 7 Survived & Cabin
+
+Since our data has so many missing values for cabin, our confidence in the results of this plot should be decreased.
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 7 Survived & Cabin
+train2 <- train[!is.na(train$Cabin),] # copy of train w/o NAs
+Survival2 <- ifelse(train2$SurvivedNum==1,"yes","no") 
+ggplot(data=train2) +
+   geom_mosaic(aes(x=product(Survival2, Cabin),fill=Survival2)) +
+   labs(x='Cabin', y='', title='Tianic Survival by Cabin')
+```
+
+
+It would appear that perhaps cabin is not as associated with survivability as we had hoped for, given that A cabins are on the deck and F cabins near the keel where the ship hit the iceberg.
+
+
+* 8 Survived & Embarked 
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 8 Survived & Embarked 
+PortEmbarked <- ifelse(train$Embarked=="C","Cherbourg", 
+                ifelse(train$Embarked=="Q","Queenstown", "Southampton"))
+dat <- data.frame(Survival, PortEmbarked)
+
+ggplot(data=dat) +
+   geom_mosaic(aes(x=product(Survival, PortEmbarked),fill=Survival)) +
+   labs(x='Port of Embarkation', y='', 
+   title='Tianic Survival by Port of Embarkation')
+```
+
+There seems to be some evidence that having embarked in Southhampton is an indicator of higher probability of survival. 
+
+We can explore port of embarkation in a more nuanced manner by considering the fares paid at each port, and whether survivability appears to me more associated with the fare or the port embarked. We use the log of fares since it would be hard to observe any differences in the boxplots given the highly skewed distribution of fare.
+
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+# 8 Survived & Embarked & Fare
+dat$FareLog <- train$FareLog
+dat <- dat[!is.na(dat$PortEmbarked),]
+ggplot(data=dat) +
+   geom_boxplot(aes(x=PortEmbarked,y=FareLog, fill=Survival)) +
+   labs(x='Port of Embarkation', y='Fare in Log(Pounds Sterling)', 
+   title='Titanic Survival by Port of Embarkation and Fare')
+```
+
+
+Several curiosities pop out in this plot. First, Southhampton's higher survivability is not entirely associated with fare, since Cherbourg seems to have a higher survivability when considering fare. Second, Queenstown's seems to go against common sense in that higher fares aren't necessarily associated with higher survivability. Lastly, the difference in survivability according to fare varies from port to port, for example, we see a more pronounced difference in Cherbourg, and almost no difference in Queenstown.
+
+
+
+* 9 Survival and Title 
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+# 9 Survival and Title
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(Survival, Title),fill=Survival)) + 
+   labs(x='Title', y='',
+   title='Tianic Survival by Title') + 
+   theme(axis.text.x = element_text(angle = 90))
+```
+
+Title can be seen as a proxy for gender and as we've seen, females survived a lot better than males. It is worth keeping this attribute as it shows some granularity in what kinds of folks survived better within gender groups, i.e. those with rare titles.
+
+
+* 10 Survived and NameLength
+
+```{r fig.height=4.5, fig.width=8, echo=FALSE}
+# 10 Survived and NameLength
+plot(train$SurvivedNum~train$NameLength, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Name Length",
+    ylab="Probability of Survival", xlab="Name Length (chars)")
+linmod=lm(SurvivedNum~NameLength,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~NameLength,family='binomial',data=train)
+curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+
+Longer names do appear to have some association with higher probabilities of survival so we are also keeping this feature. It might just be capturing the association of longer names and wealth, but since in machine learning we do not care about multicollinearity issues, we will test whether to keep this attribute or not during our feature selection modeling phase.
+
+---
+
+
+
+
+# Multivariate Graphical EDA
+
+The higher-dimensional problem space of combinations with 11 variables is as follows:
+
+```{r}
+# Combinations of 3 or more variables quickly explode
+vars <- 1:11
+for (i in 2:9) {
+	num <- length(combn(vars,i))/i
+	print(paste("There are ", num, "combinations of 11 variables taken", i, "at a time."))
+}
+```
+
+The number of combinations is complementary (adding up to 11): 6 = 5, 7 = 4, etc., so when considering combinations of 9 variables, we are just considering the complement of 2 variables.
+
+Of the 165 trivariate combinations, 45 alone are possibilities that interact with our outcome `Survival` -- clearly too many to consider, so our approach will by means of necessity be minimal and select, but I wanted to make the size of the entire enterprise known.
+
+
+
+
+# Conclusion
+
+
 
 
 ---
