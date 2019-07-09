@@ -120,11 +120,26 @@ train$PassengerId <- NULL
 
 `Survived` is dropped and `SurvivedFac` (as categorical outcome) and `SurvivedNum` (as a continuous range from 0 to 1, indicating probabilities) are created.
 
+
+```{r}
+str(train$Survived)
+```
+
+
 ```{r}
 # Survived
+train$SurvivedFac <- factor(train$Survived) 
+train$SurvivedFac <- ifelse(train$SurvivedFac=="1","yes","no")
+str(train$SurvivedFac)
+```
+
+
+
+
 train$SurvivedFac <- factor(train$Survived) # for plotting as categorical outcome
 train$SurvivedNum <- as.numeric(train$Survived) # for plotting as numerical outome
 train$Survived <- NULL # drop original
+summary(train)
 ```
 
 
@@ -135,7 +150,8 @@ train$Survived <- NULL # drop original
 ```{r}
 # Pclass
 train$PclassFac <- ifelse(train$Pclass==1, "1st Class", ifelse(train$Pclass==2, "2nd Class", "3rd Class"))
-train$PclassNum <- train$Pclass
+train$PclassFac <- factor(train$PclassFac)
+train$PclassNum <- as.integer(train$Pclass)
 train$Pclass <- NULL
 ```
 
@@ -178,6 +194,7 @@ for (i in 1:nrow(train)) {
 	train$Title[i] <- ifelse(train$Title[i] %in% common_titles, train$Title[i], # do not replace
 	                         ifelse(train$Title[i] %in% rare_male, "rareMale", "rareFemale"))
 }
+train$Title <- factor(train$Title)
 # unique titles
 unique(train$Title)
 ```
@@ -231,12 +248,14 @@ Since both `SibSp` and `Parch` have skewed distributions (as we will see in the 
 
 ```{r}
 # Logs of SibSp and Parch
-train$SibSpLog <- log(train$SibSp)
-train$ParchLog <- log(train$Parch)
+train$SibSpLog <- log(train$SibSp+0.1)
+train$ParchLog <- log(train$Parch+0.1)
 # Change SibSp and Parch to factor
 train$SibSp <- factor(train$SibSp)
 train$Parch <- factor(train$Parch)
 ```
+
+
 
 
 ---
@@ -292,7 +311,7 @@ train$TicketClean <- NULL
 Since `Fare` has a skewed distribution (as we will see in the Univariate Graphical EDA section) we create a `FareLog` variable which will help with linear models.
 
 ```{r}
-train$FareLog <- log(train$Fare)
+train$FareLog <- log(train$Fare+1)
 ```
 
 
@@ -335,17 +354,20 @@ We now have good representations in all cabins and not too many levels but still
 
 ## Embarked
 
-We just the letters with actual port names for ease in plotting.
+We substitute the letters for port names and impute the two missing cases with the majority class.
 
 ```{r}
 train$Embarked <- ifelse(train$Embarked=="C","Cherbourg",
                          ifelse(train$Embarked=="Q","Queensland","Southhampton"))
+train$Embarked[is.na(train$Embarked)] <- "Southhampton"
+train$Embarked <- factor(train$Embarked) # re-factoring
 ```
 
 
 ---
 
 # Pre-Processing 6: Age
+
 
 [NOTE: REDO THIS SECTION ENTIRELY, USE AGE AS CONTINUOUS, RECONSIDER DISCRETE CASE LATER]
 
@@ -388,12 +410,15 @@ A final and more sophisticated approach would be to use the rest of the informat
 First we separate the data into sets with age and without age:
 
 ```{r}
-'%ni%' <- Negate('%in%')
-out_vars <- c("SurvivedNum","FareLog") # we do not need these redundant features
-yesAge <- train[!is.na(train$Age), colnames(train) %ni% out_vars] # 714 rows
-noAge <- train[is.na(train$Age), colnames(train) %ni% out_vars] # 177 rows we're trying to predict
-noAge <- noAge[, colnames(noAge) != "Age"]
+# choose features for modeling
+chosen <- c("Age","SibSp","Parch","Fare","Cabin","Embarked","SurvivedFac",
+            "PclassFac","Title","NameLength","GenderFac")
+yesAge <- train[!is.na(train$Age), colnames(train) %in% chosen] # with ages <- to model
+noAge <- train[is.na(train$Age), colnames(train) %in% chosen] # without ages <- to predict
+# drop the outcome since it only has missing values
+noAge$Age <- NULL
 ```
+
 
 Now we can use the dataset with ages to train a tree model:
 
@@ -443,11 +468,11 @@ plot(rf_RMSEs, ylim=range(rf_RMSEs), ylab="Root Mean Squared Error", col="red",
      xlab="Num. of Features Randomly Sampled at Each Split", type="l")
 ```
 
-Looks like 4 features gets the job done:
+Looks like 8 features gets the job done with lowest RMSE.
 
 ```{r fig.height=5,fig.width=7}
 set.seed(1)
-rf_age <- randomForest(Age ~., data=age_train, mtry=4, na.action=na.omit)
+rf_age <- randomForest(Age ~., data=age_train, mtry=8, na.action=na.omit)
 rf_yhat <- predict(rf_age, newdata=age_test)
 test_RMSE <- round(sqrt(mean((rf_yhat - y_test)^2, na.rm=TRUE)), 2)
 plot(rf_yhat, y_test,ylab="Actual Age",xlab="Predicted Age",pch=19,col=rgb(0,0,1,0.5))
@@ -518,7 +543,10 @@ train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
                     ifelse(train$Age > 12 & train$Age < 20, "Teen",
                     ifelse(train$Age > 19 & train$Age < 36, "YoungAdult", 
                     ifelse(train$Age > 35 & train$Age < 56, "MiddleAged", "Elderly"))))
-str(train)
+train$AgeFac <- factor(train$AgeFac)
+
+train$Age <- as.integer(train$Age)
+
 ```
 
 ---
