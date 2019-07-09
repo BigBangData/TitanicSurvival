@@ -121,25 +121,13 @@ train$PassengerId <- NULL
 `Survived` is dropped and `SurvivedFac` (as categorical outcome) and `SurvivedNum` (as a continuous range from 0 to 1, indicating probabilities) are created.
 
 
-```{r}
-str(train$Survived)
-```
-
 
 ```{r}
 # Survived
+train$SurvivedFac <- ifelse(train$Survived=="1","yes","no")
 train$SurvivedFac <- factor(train$Survived) 
-train$SurvivedFac <- ifelse(train$SurvivedFac=="1","yes","no")
-str(train$SurvivedFac)
-```
-
-
-
-
-train$SurvivedFac <- factor(train$Survived) # for plotting as categorical outcome
-train$SurvivedNum <- as.numeric(train$Survived) # for plotting as numerical outome
+train$SurvivedNum <- as.numeric(train$Survived) 
 train$Survived <- NULL # drop original
-summary(train)
 ```
 
 
@@ -544,9 +532,8 @@ train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
                     ifelse(train$Age > 19 & train$Age < 36, "YoungAdult", 
                     ifelse(train$Age > 35 & train$Age < 56, "MiddleAged", "Elderly"))))
 train$AgeFac <- factor(train$AgeFac)
-
-train$Age <- as.integer(train$Age)
-
+train$AgeNum <- as.integer(train$Age)
+train$Age <- NULL
 ```
 
 ---
@@ -554,6 +541,7 @@ train$Age <- as.integer(train$Age)
 
 ## Summary after pre-processing
 
+[FIX: REORDER DATASET]
 
 ```{r}
 # Post-Processing summary
@@ -576,24 +564,25 @@ Now that we have the data in a basic shape for graphical EDA, we can try underst
 In this section we look at feature distributions one at a time. A few quick plots of the class imbalances in **Survived, Passenger Class,** and **Sex** give us a better understanding of these attributes:
 
 
-```{r fig.height=4, fig.width=8, echo=FALSE}
+```{r fig.height=4, fig.width=9, echo=FALSE}
 par(mfrow=c(1,3))
 # Survived, Pclass, Sex
-plot(train$SurvivedFac,main="Survived", col=c("red","chartreuse3"))
-plot(train$Pclass,main="Passenger Class", col=c("chartreuse3", "cadetblue3", "chocolate1"))
-plot(train$Sex,main="Sex", col=c("palevioletred1","cadetblue2"))
+plot(train$SurvivedFac, main="Survived", col=c("red","chartreuse3"))
+plot(train$PclassFac, main="Passenger Class", col=c("chartreuse3", "cadetblue3", "chocolate1"))
+plot(train$GenderFac, main="Sex", col=c("palevioletred1","cadetblue2"))
 ```
 
 
 
 Majorities did not survive, purchased 3rd class tickets, and were males, so being female and higher class is an indicator of survival, as expected.
 
-```{r fig.height=4, fig.width=8, echo=FALSE}
+```{r fig.height=4, fig.width=9, echo=FALSE}
 par(mfrow=c(1,3))
+par(oma=c(3,1,1,1))
 plot(train$Cabin, main="Cabin", col=terrain.colors(6))
-plot(train$Embarked, main="Port Embarked", col=terrain.colors(3))
+plot(train$Embarked, main="Port Embarked", col=terrain.colors(3),cex.axis=0.8, las=2)
 train$Title <- factor(train$Title)
-plot(train$Title, main="Titles", col=terrain.colors(5))
+plot(train$Title, main="Titles", col=terrain.colors(5),cex.axis=0.8, las=2)
 ```
 
 
@@ -603,7 +592,7 @@ Tackling the distributions of the two numerical variables `Age` and `Fare`:
 
 ```{r fig.height=4.5, fig.width=8, echo=FALSE}
 par(mfrow=c(1,2))
-hist(train$Age, xlab='Age', main="Ages", ylab="", col=rgb(0,0.4,0.4,0.4))
+hist(train$AgeNum, xlab='Age', main="Ages", ylab="", col=rgb(0,0.4,0.4,0.4))
 hist(train$Fare, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
 hist(log(train$Fare)*max(train$Fare)/8, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
 legend(250, 450, pch=15, col=rgb(0,0,1,0.3), "log distribution")
@@ -687,7 +676,7 @@ It would seem that folks in first class and second class had it better than thos
 ```{r fig.height=4, fig.width=6, echo=FALSE}
 # 2 Survived & Sex
 ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, Sex),fill=Survival)) +
+   geom_mosaic(aes(x=product(Survival, GenderFac),fill=Survival)) +
    labs(x='Sex', y='', title='Tianic Survival by Gender')
 ```
 
