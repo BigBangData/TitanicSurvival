@@ -74,58 +74,61 @@ plot(train$NameLength, train$Fare,
 	ylab="Fare (Pounds)")
 abline(lm(train$Fare ~ train$NameLength), col="red")
 
-## ----include=FALSE-------------------------------------------------------
-# drop Name 
-train$Name <- NULL 
-
 ## ------------------------------------------------------------------------
 train$GenderFac <- train$Sex # factor for plotting
 train$IsMale <- ifelse(train$Sex=="male",1,0) # indicator for ML
 train$Sex <- NULL # drop original
 
 ## ------------------------------------------------------------------------
-# Logs of SibSp and Parch
-train$SibSpLog <- log(train$SibSp+0.1)
-train$ParchLog <- log(train$Parch+0.1)
 # Change SibSp and Parch to factor
-train$SibSp <- factor(train$SibSp)
-train$Parch <- factor(train$Parch)
+train$SiblingSpouse <- factor(train$SibSp)
+train$ParentChildren <- factor(train$Parch)
+train$NumRelatives <- train$SibSp + train$Parch
+train$NumRelatives <- factor(train$NumRelatives)
+train$SibSp <- NULL
+train$Parch <- NULL
 
 ## ------------------------------------------------------------------------
-library(knitr)
-purl("Titanic_Survival.Rmd")
+# EDA into Ticket and Fare
+temp_dfm <- train[, colnames(train) %in% c("Name","Ticket","Fare")]
+temp_dfm <- temp_dfm[order(temp_dfm["Ticket"]),] # order by Ticket
+temp_dfm[1:10,]
 
 ## ------------------------------------------------------------------------
-sample_tickets <- train[train$Ticket %in% 2650:2670, colnames(train) %in% c("Ticket","Fare")]
-head(sample_tickets[order(sample_tickets$Ticket), ],10)
+# keep counts of tickets
+counts <- aggregate(train$Ticket, by=list(train$Ticket), 
+                      FUN=function(ticket) sum(!is.na(ticket)))
+# function that takes a data frame's fare and ticket counts and apply
+divide_fare_count <- function(dfm) {
+  fare <- as.numeric(dfm["Fare"])
+  # ticket counts
+  count_given_ticket <- counts[which(counts[,1] == dfm["Ticket"]), 2]
+  result <- round(fare/count_given_ticket,2)
+  return(result)
+}
+# create FarePerPerson
+train$FarePerPerson <- apply(X=train, MARGIN=1, FUN=divide_fare_count)
+
+# looking at the temp dataframe of results again
+chosen <- c("Name","Ticket","Fare","FarePerPerson")
+temp_dfm <- train[, colnames(train) %in% chosen]
+temp_dfm <- temp_dfm[order(temp_dfm["Ticket"]),] # order by Ticket
+temp_dfm[1:10,]
 
 ## ------------------------------------------------------------------------
-# ticket counts
-counts <- aggregate(train$Ticket, by=list(train$Ticket), FUN=function(ticket) sum(!is.na(ticket)))
-# override Fare with a "fare per person" value
-
-train$FarePerPerson <- apply(train, 1, function(dat) as.numeric(dat["Fare"]) / counts[which(counts[,1] == dat["Ticket"]), 2])
-
-
-
-## ------------------------------------------------------------------------
-# drop Ticket
-head(train[,c("Ticket","Fare","FarePerPerson")])
-#train$Ticket <- NULL
+# create TicketCount
+train$TicketCount <- apply(X=train, MARGIN=1, FUN=function(dfm) counts[which(counts[,1] == dfm["Ticket"]), 2])
+# drop Fare, Name, and Ticket
+'%ni%' <- Negate('%in%')
+not_chosen <- c("Fare","Name","Ticket")
+train <- train[,colnames(train) %ni% not_chosen]
 
 ## ------------------------------------------------------------------------
 # create FareLog
-table(train$Fare)
-train$FareLog <- log(train$Fare+1)
+train$FarePerPersonLog <- log(train$FarePerPerson+1)
 
 ## ------------------------------------------------------------------------
-#install.packages('reshape')
-library(reshape)
-library(caret)
-ticket.count <- aggregate(train$Ticket, by=list(train$Ticket), function(x) sum( !is.na(x) ))
-ticket.count
-
-
+names(train)
 
 ## ----echo=FALSE----------------------------------------------------------
 # Cleaning up Cabin
@@ -162,13 +165,10 @@ hist(AgeCopy, xlab='Age', main="After Imputation with Medians", ylab="",
      col=rgb(0.4,0,0.4,0.4), ylim=c(0,420))
 
 ## ------------------------------------------------------------------------
-hist(train$FareLog)
-
-## ------------------------------------------------------------------------
 # choose features for modeling
-chosen <- c("Age","SibSp","Parch","Fare","Cabin","Embarked","SurvivedFac",
-            "PclassFac","Title","NameLength","GenderFac")
-yesAge <- train[!is.na(train$Age), colnames(train) %in% chosen] # with ages <- to model
+chosen <- c("Age","SurvivedFac","PclassFac","Title","NameLength",
+            "SiblingSpouse","ParentChildren","FarePerPerson","TicketCount")
+yesAge <- train[!is.na(train$Age), colnames(train) %in% chosen] # with ages <- to train and evaluate models
 noAge <- train[is.na(train$Age), colnames(train) %in% chosen] # without ages <- to predict
 # drop the outcome since it only has missing values
 noAge$Age <- NULL
@@ -184,24 +184,31 @@ age_train <- yesAge[age_bool, ]
 age_test <- yesAge[!age_bool, colnames(yesAge) != "Age"]
 # fit model
 age_mod <- tree(Age~.,data=age_train)
-#cplot tree
+# plot tree
 plot(age_mod)
 text(age_mod, pretty=0)
 
-## ----fig.height=5,fig.width=7--------------------------------------------
+## ----fig.height=5.5,fig.width=5.5----------------------------------------
 y_hat <- predict(age_mod, newdata=age_test)
 y_test <- yesAge[!age_bool, "Age"]
 test_RMSE <- round(sqrt(mean((y_hat - y_test)^2)),2)
 plot(y_hat, y_test,ylab="Actual Age",xlab="Predicted Age",pch=19,col=rgb(0,0,1,0.3))
-text(c(42,47),10, c("RMSE = ", test_RMSE))
+text(c(35,40),10, c("RMSE = ", test_RMSE))
 abline(0,1, col="red",lty=2)
 
 ## ----fig.height=4,fig.width=6--------------------------------------------
 suppressMessages(library(randomForest))
+# split on outcome
 set.seed(1)
+Y_age <- yesAge[, "Age"]
+age_bool <- sample.split(Y_age, SplitRatio = 2/3) 
+age_train <- yesAge[age_bool, ]
+age_test <- yesAge[!age_bool, colnames(yesAge) != "Age"]
+y_test <- yesAge[!age_bool, "Age"]
+
 # checking various RMSEs
-rf_RMSEs <- vector("numeric", length=10)
-for (i in 1:10) {
+rf_RMSEs <- vector("numeric", length=8)
+for (i in 1:8) {
   rf_age <- randomForest(Age ~., data=age_train, mtry=i, na.action=na.omit)
   rf_yhat <- predict(rf_age, newdata=age_test)
   rf_RMSEs[i] <- sqrt(mean((rf_yhat - y_test)^2,na.rm=TRUE))
@@ -209,53 +216,33 @@ for (i in 1:10) {
 plot(rf_RMSEs, ylim=range(rf_RMSEs), ylab="Root Mean Squared Error", col="red",
      xlab="Num. of Features Randomly Sampled at Each Split", type="l")
 
-## ----fig.height=5,fig.width=7--------------------------------------------
-set.seed(1)
-rf_age <- randomForest(Age ~., data=age_train, mtry=8, na.action=na.omit)
+## ----fig.height=5.5,fig.width=5.5----------------------------------------
+rf_age <- randomForest(Age ~., data=age_train, mtry=2, na.action=na.omit)
 rf_yhat <- predict(rf_age, newdata=age_test)
 test_RMSE <- round(sqrt(mean((rf_yhat - y_test)^2, na.rm=TRUE)), 2)
 plot(rf_yhat, y_test,ylab="Actual Age",xlab="Predicted Age",pch=19,col=rgb(0,0,1,0.5))
-text(c(38,42),10, c("RMSE = ", test_RMSE))
+text(c(38,45),10, c("RMSE = ", test_RMSE))
 abline(0,1, col="red",lty=2)
-
-## ------------------------------------------------------------------------
-set.seed(1)
-rf_age <- randomForest(Age ~., data=yesAge, mtry=4, na.action=na.omit)
-noAge$Age <- predict(rf_age, newdata=noAge)
-round(colMeans(is.na(noAge))[colSums(is.na(noAge))>0]*100,2)
 
 ## ----fig.height=4,fig.width=5--------------------------------------------
 varImpPlot(rf_age)
 
 ## ------------------------------------------------------------------------
 set.seed(1)
-yesAge <- yesAge[,colnames(yesAge) != "Cabin"]
-noAge <- noAge[,colnames(noAge) != "Cabin"]
-rf_age <- randomForest(Age ~., data=yesAge, mtry=4, na.action=na.omit)
+rf_age <- randomForest(Age ~., data=yesAge, mtry=2, na.action=na.omit)
 # imputing Age predictions
 train$Age[is.na(train$Age)] <- round(predict(rf_age, newdata=noAge),0)
 sum(is.na(train$Age)) == 0
 
-## ----fig.height=4.5, fig.width=9.5, echo=FALSE---------------------------
-Child <- sum(ifelse(train$Age > 0 & train$Age < 13,1,0))
-Teen <-  sum(ifelse(train$Age > 12 & train$Age < 20,1,0))
-YoungAdult <- sum(ifelse(train$Age > 19 & train$Age < 36,1,0))
-MiddleAged <- sum(ifelse(train$Age > 35 & train$Age < 56,1,0))
-Elderly <- sum(ifelse(train$Age > 55 & train$Age < 100,1,0))
-discrete_age_vec3 <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
+## ----fig.height=4.5, fig.width=9, echo=FALSE-----------------------------
 par(mfrow=c(1,2))
-# original values
-barplot(discrete_age_vec1, col=terrain.colors(5), ylim=c(0,515),
-        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
-        main="Age Distribution with Missing Values",  space=c(0,0,0,0,0),
-        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
-# imputed values
-barplot(discrete_age_vec3, col=terrain.colors(5), ylim=c(0,515),
-        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
-        main="Age Distribution with Imputed Values",  space=c(0,0,0,0,0),
-        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
+hist(train$Age, xlab='Age', main="After Random Forest Imputation", ylab="", 
+     col=rgb(0,0.4,0.4,0.4), ylim=c(0,420))
+hist(AgeCopy, xlab='Age', main="After Imputation with Medians", ylab="", 
+     col=rgb(0.4,0,0.4,0.4), ylim=c(0,420))
 
 ## ------------------------------------------------------------------------
+# create AgeFac for Age Categories
 train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
                     ifelse(train$Age > 12 & train$Age < 20, "Teen",
                     ifelse(train$Age > 19 & train$Age < 36, "YoungAdult", 
@@ -265,35 +252,37 @@ train$AgeNum <- as.integer(train$Age)
 train$Age <- NULL
 
 ## ------------------------------------------------------------------------
-# Post-Processing summary
+new_order <- c("Cabin","Embarked","PclassNum","PclassFac","NameLength","Title","IsMale",
+               "GenderFac","SiblingSpouse","ParentChildren","NumRelatives","TicketCount",
+               "FarePerPerson","FarePerPersonLog","AgeNum","AgeFac","SurvivedNum","SurvivedFac")
+train <- train[,new_order]
+head(train)
+
+## ------------------------------------------------------------------------
+# Summary after pre-processing
 summary(train)
 
-## ----fig.height=4, fig.width=9, echo=FALSE-------------------------------
-par(mfrow=c(1,3))
-# Survived, Pclass, Sex
-plot(train$SurvivedFac, main="Survived", col=c("red","chartreuse3"))
-plot(train$PclassFac, main="Passenger Class", col=c("chartreuse3", "cadetblue3", "chocolate1"))
+## ------------------------------------------------------------------------
+names(train)
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+par(mfrow=c(1,2)); par(oma=c(3,1,1,1))
+plot(train$Cabin, main="Cabin", col=terrain.colors(6))
+plot(train$Embarked, main="Port Embarked", col=terrain.colors(3), cex.axis=0.8, cex.sub=0.8, las=2)
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+par(mfrow=c(1,2)); par(oma=c(3,1,1,1))
+plot(train$PclassFac, main="Pclass Categorical", col=terrain.colors(3),cex.axis=0.8, las=2)
+hist(train$NameLength, main="Name Lengths", xlab="Length (characters)", col="steelblue")
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+par(mfrow=c(1,2)); par(oma=c(3,1,1,1))
+plot(train$Title, main="Titles", col=terrain.colors(5),cex.axis=0.8, las=2)
 plot(train$GenderFac, main="Sex", col=c("palevioletred1","cadetblue2"))
 
-## ----fig.height=4, fig.width=9, echo=FALSE-------------------------------
-par(mfrow=c(1,3))
-par(oma=c(3,1,1,1))
-plot(train$Cabin, main="Cabin", col=terrain.colors(6))
-plot(train$Embarked, main="Port Embarked", col=terrain.colors(3),cex.axis=0.8, las=2)
-train$Title <- factor(train$Title)
-plot(train$Title, main="Titles", col=terrain.colors(5),cex.axis=0.8, las=2)
-
-## ----fig.height=4.5, fig.width=8, echo=FALSE-----------------------------
-par(mfrow=c(1,2))
-hist(train$AgeNum, xlab='Age', main="Ages", ylab="", col=rgb(0,0.4,0.4,0.4))
-hist(train$Fare, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
-hist(log(train$Fare)*max(train$Fare)/8, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
-legend(250, 450, pch=15, col=rgb(0,0,1,0.3), "log distribution")
-
-## ----fig.height=4.5, fig.width=8, echo=FALSE-----------------------------
-# 
-SS <- table(train$SibSp)
-PC <- table(train$Parch)
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+SS <- table(train$SiblingSpouse)
+PC <- table(train$ParentChildren)
 counts <- rbind(SS,PC)
 rownames(counts) <- c("Sibling or Spouse", "Parent or Child")
 par(mfrow=c(1,1))
@@ -302,133 +291,6 @@ barplot(counts, main="Number of Siblings/Spouses vs Parents/Children",
   legend = rownames(counts), beside=TRUE)
 
 ## ------------------------------------------------------------------------
-names(train)
-
-## ------------------------------------------------------------------------
-# combinations
-head(t(data.frame(combn(11, 2))))
-tail(t(data.frame(combn(11, 2))))
-
-## ----fig.height=6, fig.width=8.5-----------------------------------------
-# Scatterplot matrix
-chosen <- c("SurvivedNum", "Pclass", "Sex","Age","Fare","Embarked")
-plot(train[,colnames(train) %in% chosen])
-
-## ----fig.height=4, fig.width=7, echo=FALSE-------------------------------
-# 1. Survived and Pclass 
-suppressMessages(require(ggplot2))
-suppressMessages(require(ggmosaic))
-Survival <- ifelse(train$SurvivedNum==1,"yes","no") # for ggplot
-PclassFac <- factor(train$Pclass)
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, PclassFac),fill=Survival)) +
-   labs(x='Passenger Class', y='', title='Tianic Survival by Passenger Class')
-
-## ----fig.height=4, fig.width=6, echo=FALSE-------------------------------
-# 2 Survived & Sex
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, GenderFac),fill=Survival)) +
-   labs(x='Sex', y='', title='Tianic Survival by Gender')
-
-## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
-# 3 Survived & Age
-plot(train$SurvivedNum~train$Age, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Age",ylab="Probability of Survival", xlab="Age")
-linmod=lm(SurvivedNum~Age,data=train)
-abline(linmod, col="green", lwd=2, lty=2)
-g=glm(SurvivedNum~Age,family='binomial',data=train)
-curve(predict(g,data.frame(Age=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-
-## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
-# 4 Survived & SibSp
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, SibSp),fill=Survival)) +
-   labs(x='Number of Siblings/Spouses', y='', 
-   title='Tianic Survival by Number of Siblings or Spouses')
-
-## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
-# 5 Survived & Parch
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, Parch),fill=Survival)) +
-   labs(x='Number of Parents/Children', y='', 
-   title='Tianic Survival by Number of Parents or Children')
-
-## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
-# 6 Survived & Fare
-plot(train$SurvivedNum~train$Fare, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Fare",ylab="Probability of Survival", xlab="Fare (Pounds Sterling)")
-linmod=lm(SurvivedNum~Fare,data=train)
-abline(linmod, col="green", lwd=1, lty=2)
-g=glm(SurvivedNum~Fare,family='binomial',data=train)
-curve(predict(g,data.frame(Fare=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(200,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-
-## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
-# 6 Survived & Log(Fare)
-train$FareLog <- log(train$Fare+1) # adding a pound to avoid Inf log values for 0 fares
-# plot
-plot(train$SurvivedNum~train$FareLog, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Log of Fare",
-    ylab="Probability of Survival", xlab="Fare in Log(Pounds Sterling)")
-linmod=lm(SurvivedNum~FareLog,data=train)
-abline(linmod, col="green", lwd=1, lty=2)
-g=glm(SurvivedNum~FareLog,family='binomial',data=train)
-curve(predict(g,data.frame(FareLog=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-
-## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
-# 7 Survived & Cabin
-train2 <- train[!is.na(train$Cabin),] # copy of train w/o NAs
-Survival2 <- ifelse(train2$SurvivedNum==1,"yes","no") 
-ggplot(data=train2) +
-   geom_mosaic(aes(x=product(Survival2, Cabin),fill=Survival2)) +
-   labs(x='Cabin', y='', title='Tianic Survival by Cabin')
-
-## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
-# 8 Survived & Embarked 
-PortEmbarked <- ifelse(train$Embarked=="C","Cherbourg", 
-                ifelse(train$Embarked=="Q","Queenstown", "Southampton"))
-dat <- data.frame(Survival, PortEmbarked)
-
-ggplot(data=dat) +
-   geom_mosaic(aes(x=product(Survival, PortEmbarked),fill=Survival)) +
-   labs(x='Port of Embarkation', y='', 
-   title='Tianic Survival by Port of Embarkation')
-
-## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
-# 8 Survived & Embarked & Fare
-dat$FareLog <- train$FareLog
-dat <- dat[!is.na(dat$PortEmbarked),]
-ggplot(data=dat) +
-   geom_boxplot(aes(x=PortEmbarked,y=FareLog, fill=Survival)) +
-   labs(x='Port of Embarkation', y='Fare in Log(Pounds Sterling)', 
-   title='Titanic Survival by Port of Embarkation and Fare')
-
-## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
-# 9 Survival and Title
-ggplot(data=train) +
-   geom_mosaic(aes(x=product(Survival, Title),fill=Survival)) + 
-   labs(x='Title', y='',
-   title='Tianic Survival by Title') + 
-   theme(axis.text.x = element_text(angle = 90))
-
-## ----fig.height=4.5, fig.width=8, echo=FALSE-----------------------------
-# 10 Survived and NameLength
-plot(train$SurvivedNum~train$NameLength, pch=19, col=rgb(0,0,.6,.2),
-    main="Titanic Survival by Name Length",
-    ylab="Probability of Survival", xlab="Name Length (chars)")
-linmod=lm(SurvivedNum~NameLength,data=train)
-abline(linmod, col="green", lwd=1, lty=2)
-g=glm(SurvivedNum~NameLength,family='binomial',data=train)
-curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
-legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
-
-## ------------------------------------------------------------------------
-# Combinations of 3 or more variables quickly explode
-vars <- 1:11
-for (i in 2:9) {
-	num <- length(combn(vars,i))/i
-	print(paste("There are ", num, "combinations of 11 variables taken", i, "at a time."))
-}
+library(knitr)
+purl("Titanic_Survival.Rmd", documentation=2)
 
