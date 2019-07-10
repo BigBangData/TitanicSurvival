@@ -206,13 +206,8 @@ abline(lm(train$Fare ~ train$NameLength), col="red")
 ```
 
 
-While the evidence isn't particularly strong, we might as well keep `NameLength` in the mix just to see whether it improves modeling later on. Now we can drop `Name`.
+While the evidence isn't particularly strong, we might as well keep `NameLength` in the mix just to see whether it improves modeling later on. Now we could drop `Name`, but will do so after some further cleaning as we use this for EDA later.
 
-
-```{r include=FALSE}
-# drop Name 
-train$Name <- NULL 
-```
 
 
 ## Sex: GenederFac, IsMale
@@ -231,16 +226,17 @@ train$Sex <- NULL # drop original
 
 # Pre-Processing 3: SibSp, Parch
 
-Since both `SibSp` and `Parch` have skewed distributions (as we will see in the Univariate Graphical EDA section) we create Log versions of them, and then convert them to factors for plotting and EDA.
+We conveniently rename `SibSp` and `Parch` to `SiblingSpouse` and `ParentChildren` and create a variable that is a sum of the two: `NumRelatives`. 
 
 
 ```{r}
-# Logs of SibSp and Parch
-train$SibSpLog <- log(train$SibSp+0.1)
-train$ParchLog <- log(train$Parch+0.1)
 # Change SibSp and Parch to factor
-train$SibSp <- factor(train$SibSp)
-train$Parch <- factor(train$Parch)
+train$SiblingSpouse <- factor(train$SibSp)
+train$ParentChildren <- factor(train$Parch)
+train$NumRelatives <- train$SibSp + train$Parch
+train$NumRelatives <- factor(train$NumRelatives)
+train$SibSp <- NULL
+train$Parch <- NULL
 ```
 
 
@@ -252,57 +248,71 @@ train$Parch <- factor(train$Parch)
 
 ## Ticket
 
-After cleaning `Ticket` (see Appendix), the distribution is as follows:
+The `Ticket` attribute is somewhat useless as far as extracting information from the ticket number itself. What the ticket number does provide, however, is information on how many tickets were purchased under a given `Fare`, such that we can calculate the **fare per person**, which is what we need since our observational unit (a row) is a person.
 
-```{r include=FALSE}
-# Cleaning up Ticket
-train$Ticket <- as.character(train$Ticket) 
-# removing ending digits 
-train$TicketClean <- vector("character", nrow(train))
-for (i in 1:nrow(train)) {
-	pattern <- "[0-9]+$"
-	m <- regexec(pattern, train$Ticket[i])
-	digits <- regmatches(train$Ticket[i], m)
-	train$TicketClean[i] <- trimws(sub(digits, "", train$Ticket[i]), which="right")
-}
-# remove periods, fwd slashes, blanks, iteratively
-for (i in 1:nrow(train)) 	train$TicketClean[i] <- gsub("[.]", "", train$TicketClean[i])
-for (i in 1:nrow(train)) 	train$TicketClean[i] <- gsub("[/]", "", train$TicketClean[i])
-for (i in 1:nrow(train)) 	train$TicketClean[i] <- gsub("[\\s]", "", train$TicketClean[i])
-# cleanup manually to bin similar entries
-for (i in 1:nrow(train)) {
-train$TicketClean[i] <- ifelse(train$TicketClean[i] == "STONO2", "SOTONO2",
-					 ifelse(train$TicketClean[i] == "STONO 2", "SOTONO2",
-					 ifelse(train$TicketClean[i] == "SCAH Bale", "SCAH",
-					 ifelse(train$TicketClean[i] == "SCPari", "SCPARIS",
-					 ifelse(train$TicketClean[i] == "", "Other", train$TicketClean[i])))))
-}
-```
+Here is a sample of how there are repeated ticket numbers under the same fare:
 
 ```{r}
-# look at distribution within levels
-table(train$TicketClean)
+# EDA into Ticket and Fare
+temp_dfm <- train[, colnames(train) %in% c("Name","Ticket","Fare")]
+temp_dfm <- temp_dfm[order(temp_dfm["Ticket"]),] # order by Ticket
+temp_dfm[1:10,]
 ```
 
+There are many cases of families with the same last name (such as the Taussig above) which leads us to believe that these are not individual prices but group prices under the same ticket. So we keep `Ticket` only to clean fare.
 
-Since the "Other" level is so overbearingly dominant and there are too many unrepresented categories, it is unlikely that a lot of useful information can be gathered from `Ticket` so we just drop this attribute altogether.
-
-```{r include=FALSE}
-# drop Ticket feature
-train$Ticket <- NULL
-train$TicketClean <- NULL
-```
 
 
 ## Fare
 
-Since `Fare` has a skewed distribution (as we will see in the Univariate Graphical EDA section) we create a `FareLog` variable which will help with linear models.
+We create a `FarePerPerson` attribute and compare it to the `Fare` attribute:
 
 ```{r}
-train$FareLog <- log(train$Fare+1)
+# keep counts of tickets
+counts <- aggregate(train$Ticket, by=list(train$Ticket), 
+                      FUN=function(ticket) sum(!is.na(ticket)))
+# function that takes a data frame's fare and ticket counts and apply
+divide_fare_count <- function(dfm) {
+  fare <- as.numeric(dfm["Fare"])
+  # ticket counts
+  count_given_ticket <- counts[which(counts[,1] == dfm["Ticket"]), 2]
+  result <- round(fare/count_given_ticket,2)
+  return(result)
+}
+# create FarePerPerson
+train$FarePerPerson <- apply(X=train, MARGIN=1, FUN=divide_fare_count)
+
+# looking at the temp dataframe of results again
+chosen <- c("Name","Ticket","Fare","FarePerPerson")
+temp_dfm <- train[, colnames(train) %in% chosen]
+temp_dfm <- temp_dfm[order(temp_dfm["Ticket"]),] # order by Ticket
+temp_dfm[1:10,]
 ```
 
 
+We can now drop `Fare`, `Name`, and `Ticket`, but we can keep the ticket counts as its own attribute `TicketCount`:
+
+```{r}
+# create TicketCount
+train$TicketCount <- apply(X=train, MARGIN=1, FUN=function(dfm) counts[which(counts[,1] == dfm["Ticket"]), 2])
+# drop Fare, Name, and Ticket
+'%ni%' <- Negate('%in%')
+not_chosen <- c("Fare","Name","Ticket")
+train <- train[,colnames(train) %ni% not_chosen]
+```
+
+
+
+Since `FarePerPerson` has a skewed distribution (as we shall see in the Graphical EDA section) we create a `FarePerPErsonLog` variable which will help with linear models.
+
+```{r}
+# create FareLog
+train$FarePerPersonLog <- log(train$FarePerPerson+1)
+```
+
+```{r}
+names(train)
+```
 
 ---
 
@@ -357,51 +367,38 @@ train$Embarked <- factor(train$Embarked) # re-factoring
 # Pre-Processing 6: Age
 
 
-[NOTE: REDO THIS SECTION ENTIRELY, USE AGE AS CONTINUOUS, RECONSIDER DISCRETE CASE LATER]
+## Imputing Missing Values
 
-Pre-Processing `Age` had to wait until the end since we will be doing some modeling to impute missing values and needed other variables to be relatively clean before the modeling stage.
+The `Age` variable had to be considered at the end of pre-processing since we will be doing some pre-modeling (modeling during data pre-processing) to impute missing values and needed other variables to be relatively clean before this pre-modeling stage.
 
-The `Age` variable can be treated as continuous or discrete. Before moving on with Graphical EDA I am creating an `AgeFac` variable that bins ages into the following groups: `Child` ($0-12$) `Teen` ($13-19$), `YoungAdult` ($20-35$), `MiddleAged` ($36-55$), and `Elderly` ($56-80$). 
+It is helpful to visualize the distribution of ages before and after a certain imputing strategy to see the effect it has on the data. The common practice of imputing with measures of center such as the mean or the median (in our case there wouldn't be much of a difference as the distribution is approximately normal) distorts the distribution. To show this effectively, the y axes must agree:
 
-
-## Imputing Age
-
-Since there are many missing values, we need to explore an imputation strategy. The simple method of using a mean or median age would unnecessarily inflate the `YoungAdult` variable, as seen in the right plot below.
-
-
-```{r fig.height=4.5, fig.width=9.5, echo=FALSE}
-Child <- sum(ifelse(train$Age > 0 & train$Age < 13,1,0),na.rm=TRUE)
-Teen <-  sum(ifelse(train$Age > 12 & train$Age < 20,1,0),na.rm=TRUE)
-YoungAdult <- sum(ifelse(train$Age > 19 & train$Age < 36,1,0),na.rm=TRUE)
-MiddleAged <- sum(ifelse(train$Age > 35 & train$Age < 56,1,0),na.rm=TRUE)
-Elderly <- sum(ifelse(train$Age > 55 & train$Age < 100,1,0),na.rm=TRUE)
-discrete_age_vec1 <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
+```{r fig.height=4.5, fig.width=9, echo=FALSE}
 par(mfrow=c(1,2))
-barplot(discrete_age_vec1, col=terrain.colors(5), ylim=c(0,515),
-        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
-        main="Age Distribution with Missing Values",  space=c(0,0,0,0,0),
-        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
-# adding all 177 NAs to the Young Adult category
-YoungAdult <- YoungAdult + sum(is.na(train$Age))
-discrete_age_vec2 <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
-barplot(discrete_age_vec2, col=terrain.colors(5), ylim=c(0,515),
-        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
-        main="Age Distribution with Imputed Averages", space=c(0,0,0,0,0),
-        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
+hist(train$Age, xlab='Age', main="Before Imputation", ylab="", 
+     col=rgb(0,0.4,0.4,0.4), ylim=c(0,420))
+AgeCopy <- train$Age
+AgeCopy[is.na(AgeCopy)] <- median(AgeCopy, na.rm=TRUE)
+hist(AgeCopy, xlab='Age', main="After Imputation with Medians", ylab="", 
+     col=rgb(0.4,0,0.4,0.4), ylim=c(0,420))
 ```
 
 
-Another strategy would be to **generate random values** given a similar distribution to that which we observed in our traning data, yet one problem with this approach is that it overfits the values we observe, reinforcing patterns that might not necessarily be generalizable.
+Imputing medians amounts to deciding that when we do not know an age, we will classify this person as a young adult. 
 
-A final and more sophisticated approach would be to use the rest of the information in the training data and **generate predictions** for the ages of those individuals, based on other attributes. Since Decision Tree models are easy to use and accept missing values and unscaled features and so forth, we can easily generate ages without much hassle and modeling work.
+A better strategy would be to **generate random values** given a similar distribution to that which we observed in our traning data, yet one problem with this approach is that it overfits the values we observe, reinforcing patterns that might not necessarily be generalizable.
 
-First we separate the data into sets with age and without age:
+
+A final and more sophisticated approach would be to use the rest of the information in the training data and **predict ages** for those individuals, based on other attributes. Since Decision Tree models take missing and unscaled values, and work with categorical features, we can quickly predict ages with minimal modeling.
+
+
+First we select features for modeling since we have many redundant features (such as the logged variables), and separate the data into sets with age and without age. These features were chosen after a bit of trial and error and plotting of the variable importance score generated by the random forest (see below), which allowed me to simplify the model by removing attributes that weren't helping the model. In short, the model was too complex and therefore there was too much variance.
 
 ```{r}
 # choose features for modeling
-chosen <- c("Age","SibSp","Parch","Fare","Cabin","Embarked","SurvivedFac",
-            "PclassFac","Title","NameLength","GenderFac")
-yesAge <- train[!is.na(train$Age), colnames(train) %in% chosen] # with ages <- to model
+chosen <- c("Age","SurvivedFac","PclassFac","Title","NameLength",
+            "SiblingSpouse","ParentChildren","FarePerPerson","TicketCount")
+yesAge <- train[!is.na(train$Age), colnames(train) %in% chosen] # with ages <- to train and evaluate models
 noAge <- train[is.na(train$Age), colnames(train) %in% chosen] # without ages <- to predict
 # drop the outcome since it only has missing values
 noAge$Age <- NULL
@@ -421,33 +418,39 @@ age_train <- yesAge[age_bool, ]
 age_test <- yesAge[!age_bool, colnames(yesAge) != "Age"]
 # fit model
 age_mod <- tree(Age~.,data=age_train)
-#cplot tree
+# plot tree
 plot(age_mod)
 text(age_mod, pretty=0)
 ```
 
-According to our single tree, the passenger class and number of parents and children are the best predictors for age, followed by title, fare, cabin, and port of embarkation, as can be seen in the numerous nodes. One problem with this single tree approach is that another random starting point would generate an entirely different tree. 
+One problem with this single tree approach is that another random starting point would generate an entirely different tree. Let's how this single tree did as far as predicting ages in the test set:
 
-Let's first see how this tree did as far as predicting ages in the test set:
-
-```{r fig.height=5,fig.width=7}
+```{r fig.height=5.5,fig.width=5.5}
 y_hat <- predict(age_mod, newdata=age_test)
 y_test <- yesAge[!age_bool, "Age"]
 test_RMSE <- round(sqrt(mean((y_hat - y_test)^2)),2)
 plot(y_hat, y_test,ylab="Actual Age",xlab="Predicted Age",pch=19,col=rgb(0,0,1,0.3))
-text(c(42,47),10, c("RMSE = ", test_RMSE))
+text(c(35,40),10, c("RMSE = ", test_RMSE))
 abline(0,1, col="red",lty=2)
 ```
 
-The tree seems to be overpredicting discrete levels of ages such as 30, 10, and 40, and making lots of errors. Let's see if an ensemble model performs better.
+The tree seems to be overpredicting specific ages like 30 and 40 and making lots of errors because of this. Let's see if an ensemble model like random forest performs better.
+
 
 
 ```{r fig.height=4,fig.width=6}
 suppressMessages(library(randomForest))
+# split on outcome
 set.seed(1)
+Y_age <- yesAge[, "Age"]
+age_bool <- sample.split(Y_age, SplitRatio = 2/3) 
+age_train <- yesAge[age_bool, ]
+age_test <- yesAge[!age_bool, colnames(yesAge) != "Age"]
+y_test <- yesAge[!age_bool, "Age"]
+
 # checking various RMSEs
-rf_RMSEs <- vector("numeric", length=10)
-for (i in 1:10) {
+rf_RMSEs <- vector("numeric", length=8)
+for (i in 1:8) {
   rf_age <- randomForest(Age ~., data=age_train, mtry=i, na.action=na.omit)
   rf_yhat <- predict(rf_age, newdata=age_test)
   rf_RMSEs[i] <- sqrt(mean((rf_yhat - y_test)^2,na.rm=TRUE))
@@ -456,32 +459,23 @@ plot(rf_RMSEs, ylim=range(rf_RMSEs), ylab="Root Mean Squared Error", col="red",
      xlab="Num. of Features Randomly Sampled at Each Split", type="l")
 ```
 
-Looks like 8 features gets the job done with lowest RMSE.
+Looks like the best RMSE is when we use 2 feastures to be randomly sampled at each split.
 
-```{r fig.height=5,fig.width=7}
-set.seed(1)
-rf_age <- randomForest(Age ~., data=age_train, mtry=8, na.action=na.omit)
+```{r fig.height=5.5,fig.width=5.5}
+rf_age <- randomForest(Age ~., data=age_train, mtry=2, na.action=na.omit)
 rf_yhat <- predict(rf_age, newdata=age_test)
 test_RMSE <- round(sqrt(mean((rf_yhat - y_test)^2, na.rm=TRUE)), 2)
 plot(rf_yhat, y_test,ylab="Actual Age",xlab="Predicted Age",pch=19,col=rgb(0,0,1,0.5))
-text(c(38,42),10, c("RMSE = ", test_RMSE))
+text(c(38,45),10, c("RMSE = ", test_RMSE))
 abline(0,1, col="red",lty=2)
 ```
 
 
-The root mean squared error is a bit better even though there were many missing values in this model. 
+The model seems to make lots of mistakes still but predictions seem more disperse and the RMSE is basically the same. 
+I believe the random forest model will generalize better than a single tree (we might have gotten lucky with the RMSE) so I make predictions for the `noAge` data with this last ensemble model, imputing values and comparing the new, full `Age` distribution to our original distribution of ages.
 
-Making predictions on the `noAge` data, imputing values and comparing the new, full `Age` distribution to our original distribution of ages.
 
-```{r}
-set.seed(1)
-rf_age <- randomForest(Age ~., data=yesAge, mtry=4, na.action=na.omit)
-noAge$Age <- predict(rf_age, newdata=noAge)
-round(colMeans(is.na(noAge))[colSums(is.na(noAge))>0]*100,2)
-```
-
-We need to drop `Cabin` from the features given that the random forest model relies on it too much and it has too many missing values.
-
+For the record, this is how I determined which variables to remove from the overly complex first models I built:
 
 ```{r fig.height=4,fig.width=5}
 varImpPlot(rf_age)
@@ -490,9 +484,7 @@ varImpPlot(rf_age)
 
 ```{r}
 set.seed(1)
-yesAge <- yesAge[,colnames(yesAge) != "Cabin"]
-noAge <- noAge[,colnames(noAge) != "Cabin"]
-rf_age <- randomForest(Age ~., data=yesAge, mtry=4, na.action=na.omit)
+rf_age <- randomForest(Age ~., data=yesAge, mtry=2, na.action=na.omit)
 # imputing Age predictions
 train$Age[is.na(train$Age)] <- round(predict(rf_age, newdata=noAge),0)
 sum(is.na(train$Age)) == 0
@@ -500,33 +492,25 @@ sum(is.na(train$Age)) == 0
 
 Confirming we have no missing values in `Age`, we now plot the new distribution of this variable:
 
-
-```{r fig.height=4.5, fig.width=9.5, echo=FALSE}
-Child <- sum(ifelse(train$Age > 0 & train$Age < 13,1,0))
-Teen <-  sum(ifelse(train$Age > 12 & train$Age < 20,1,0))
-YoungAdult <- sum(ifelse(train$Age > 19 & train$Age < 36,1,0))
-MiddleAged <- sum(ifelse(train$Age > 35 & train$Age < 56,1,0))
-Elderly <- sum(ifelse(train$Age > 55 & train$Age < 100,1,0))
-discrete_age_vec3 <- c(Child,Teen,YoungAdult,MiddleAged,Elderly)
+```{r fig.height=4.5, fig.width=9, echo=FALSE}
 par(mfrow=c(1,2))
-# original values
-barplot(discrete_age_vec1, col=terrain.colors(5), ylim=c(0,515),
-        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
-        main="Age Distribution with Missing Values",  space=c(0,0,0,0,0),
-        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
-# imputed values
-barplot(discrete_age_vec3, col=terrain.colors(5), ylim=c(0,515),
-        cex.names=.7, cex.main=0.8, cex.axis=0.8, las=2,
-        main="Age Distribution with Imputed Values",  space=c(0,0,0,0,0),
-        names.arg=c("Child","Teen","Young Adult","Middle Aged","Elderly"))
+hist(train$Age, xlab='Age', main="After Random Forest Imputation", ylab="", 
+     col=rgb(0,0.4,0.4,0.4), ylim=c(0,420))
+hist(AgeCopy, xlab='Age', main="After Imputation with Medians", ylab="", 
+     col=rgb(0.4,0,0.4,0.4), ylim=c(0,420))
 ```
 
 
-We see a slight improvement from our previous imputation with averages. Treating `Age` as a numerical variable might have shown a greater improvement so we will keep both continuous and ordinal versions. 
 
+We see that the random forest model performed a more sensible imputation than the imputation with medians, as the distribution more closely resembles that of the original `Age` variable.
+
+## Age Categories
+
+We can also create an `AgeFac` variable that bins ages into the following groups: `Child` ($0-12$) `Teen` ($13-19$), `YoungAdult` ($20-35$), `MiddleAged` ($36-55$), and `Elderly` ($56-80$). 
 
 
 ```{r}
+# create AgeFac for Age Categories
 train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
                     ifelse(train$Age > 12 & train$Age < 20, "Teen",
                     ifelse(train$Age > 19 & train$Age < 36, "YoungAdult", 
@@ -535,6 +519,9 @@ train$AgeFac <- factor(train$AgeFac)
 train$AgeNum <- as.integer(train$Age)
 train$Age <- NULL
 ```
+
+
+
 
 ---
 
@@ -593,8 +580,8 @@ Tackling the distributions of the two numerical variables `Age` and `Fare`:
 ```{r fig.height=4.5, fig.width=8, echo=FALSE}
 par(mfrow=c(1,2))
 hist(train$AgeNum, xlab='Age', main="Ages", ylab="", col=rgb(0,0.4,0.4,0.4))
-hist(train$Fare, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
-hist(log(train$Fare)*max(train$Fare)/8, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
+hist(train$FarePerPerson, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
+hist(train$FarePerPersonLog)*max(train$FarePerPerson)/8, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
 legend(250, 450, pch=15, col=rgb(0,0,1,0.3), "log distribution")
 ```
 
@@ -879,10 +866,10 @@ Of the 165 trivariate combinations, 45 alone are possibilities that interact wit
 ---
 
 
-
-
-
-
+```{r}
+library(knitr)
+purl("Titanic_Survival.Rmd", documentation=2)
+```
 
 
 
