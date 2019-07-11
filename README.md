@@ -11,4 +11,4 @@ To Do:
 * List Contents
 * Write Summary
 * Finish Multivariate EDA 
-* Finish Restructuring Part 1: fix SurvivedFac, continue Random Forest imputation
+* Finish Restructuring Part 1: fix Bivariate EDA
