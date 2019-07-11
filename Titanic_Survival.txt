@@ -1,34 +1,6 @@
 
 
 
-```{r fig.height=4, fig.width=9, echo=FALSE}
-par(mfrow=c(1,3))
-# Survived, Pclass, Sex
-plot(train$SurvivedFac, main="Survived", col=c("red","chartreuse3"))
-plot(train$PclassFac, main="Passenger Class", col=c("chartreuse3", "cadetblue3", "chocolate1"))
-
-```
-
-
-
-Majorities did not survive, purchased 3rd class tickets, and were males, so being female and higher class is an indicator of survival, as expected.
-
-
-Tackling the distributions of the two numerical variables `Age` and `Fare`:
-
-```{r fig.height=4.5, fig.width=8, echo=FALSE}
-par(mfrow=c(1,2))
-hist(train$AgeNum, xlab='Age', main="Ages", ylab="", col=rgb(0,0.4,0.4,0.4))
-hist(train$FarePerPerson, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
-hist(train$FarePerPersonLog)*max(train$FarePerPerson)/8, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
-legend(250, 450, pch=15, col=rgb(0,0,1,0.3), "log distribution")
-```
-
-
-Ages are as expected roughtly normally distributed, with some older folks positively skewing the distribution. We will consider binning this variable and selecting age groups such as Children, Teenagers, Adults, and Elderly, after imputation of missing values. Fares are, as expected, quite skewed, so we could consider taking the log (blue distribution above, scaled up for ease of comparison).
-
-
-
 
 ---
 

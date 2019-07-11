@@ -2,7 +2,7 @@
 title: "Titanic Survival Part 1: EDA in R"
 author: "Marcelo Sanches"
 date: "July 4, 2019"
-output: pdf_document
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -125,7 +125,7 @@ train$PassengerId <- NULL
 ```{r}
 # Survived
 train$SurvivedFac <- ifelse(train$Survived=="1","yes","no")
-train$SurvivedFac <- factor(train$Survived) 
+train$SurvivedFac <- factor(train$Survived, levels=0:1, labels=c("no","yes"))
 train$SurvivedNum <- as.numeric(train$Survived) 
 train$Survived <- NULL # drop original
 ```
@@ -515,12 +515,11 @@ train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
                     ifelse(train$Age > 12 & train$Age < 20, "Teen",
                     ifelse(train$Age > 19 & train$Age < 36, "YoungAdult", 
                     ifelse(train$Age > 35 & train$Age < 56, "MiddleAged", "Elderly"))))
-train$AgeFac <- factor(train$AgeFac)
+train$AgeFac <- factor(train$AgeFac, levels=c("Child","Teen","YoungAdult","MiddleAged","Elderly"))
 train$AgeNum <- as.integer(train$Age)
 train$Age <- NULL
+
 ```
-
-
 
 
 ---
@@ -606,13 +605,60 @@ barplot(counts, main="Number of Siblings/Spouses vs Parents/Children",
 ```
 
 
-## NumbRelatives, TicketCount
+The distribution of number of relatives is relatively similar for sibling/spouses and parents/children so combining them makes sense, as seen below.
+
+## NumRelatives, TicketCount
+
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+par(mfrow=c(1,2))
+barplot(table(train$NumRelatives), main="Total Number of Relatives",
+  xlab="Number of Relatives", ylab="", col=rgb(0.4,0.1,0.2,0.3))
+
+barplot(table(train$TicketCount), main="Group Tickets",
+  xlab="Number of People per Ticket", ylab="", col=rgb(0,0.1,0.9,0.3))
+```
+
+
+Both `NumRelatives` and `TicketCounts` have skewed distributions, in linear modeling, if these prove to be interesting features, we might still take their log.
+
 
 ## FarePerPerson, FarePerPersonLog
 
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+par(mfrow=c(1,1))
+hist(train$FarePerPerson, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
+multiplication_factor <- max(train$FarePerPerson)/max(train$FarePerPersonLog)
+hist(train$FarePerPersonLog*multiplication_factor, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
+legend(150, 450, pch=15, col=c(rgb(1,0,0,0.4),rgb(0,0,1,0.5)), c("Fare","Log(Fare) scaled up"))
+```
+
+
+The x-axis is shown for the original `Fare` distribution not the logged one, which is scaled up by a multiplication factor which matches the range of the original fare for ease of comparison. As seen, `FarePerPersonLog` is a lot less skewed.
+
+
 ## AgeNum, AgeFac
 
-## SurvivedNum, SurvivedFac
+```{r fig.height=8, fig.width=9, echo=FALSE}
+par(mfrow=c(2,1))
+hist(train$AgeNum, xlab='Age (yrs)', main="Age Distribution", ylab="", col=terrain.colors(8))
+barplot(table(train$AgeFac), xlab='Age Group', ylab="", col=terrain.colors(5), space=c(0,0,0,0,0))
+```
+
+Binning the continuous `Age` variable into discrete groups as we did had the effect of centering the distribution, which could be useful depending on our modeling strategy.
+
+
+## Survived
+
+
+```{r fig.height=4.5, fig.width=4.5, echo=FALSE}
+par(mfrow=c(1,1))
+# Survived
+plot(train$SurvivedFac, main="Survived", col=c("red","chartreuse3"))
+```
+
+As noted earlier, the majority did not survive, but class imbalance is not a worry.
 
 
 

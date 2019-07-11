@@ -130,42 +130,89 @@
 
 \section{Contents}\label{contents}
 
-{[}LIST CONTENTS{]}
+\begin{itemize}
+\tightlist
+\item
+  Summary
+\item
+  Preliminary EDA
+\item
+  Pre-Processing 1: PassengerId, Survived, Pclass
+\item
+  Pre-Processing 2: Name, Sex
+\item
+  Pre-Processing 3: SibSp, Parch
+\item
+  Pre-Processing 4: Ticket, Fare
+\item
+  Pre-Processing 5: Cabin, Embarked
+\item
+  Pre-Processing 6: Age
+\item
+  Univariate Graphical EDA
+\item
+  Bivariate Graphical EDA
+\item
+  Multivariate Graphical EDA
+\item
+  Conclusion
+\end{itemize}
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \section{Summary}\label{summary}
 
-{[}EXPLAIN PROJECT{]}
+\subsection{Motivation}\label{motivation}
 
-In Part 1 of the Titanic Survival project I conduct \textbf{Exploratory
-Data Analisys (EDA)} of the
+The \textbf{Titanic Survival Project} was born out of my desire not only
+to participate in a Kaggle competition but also do avoid the common
+mistake of overfitting the test set by submitting various predictions.
+In a realistic production environment, the test set would be future data
+that we would run a single prediction on, not a playground for getting
+better at prediction outcomes of that particular set of data.
+
+I also wanted to use \textbf{R} and \textbf{Python} and play to their
+strengths: R for \textbf{data exploration} and \textbf{quick
+visualizations}, and Python for \textbf{machine-learning pipelines} and
+\textbf{production code}.
+
+\subsection{Project Parts}\label{project-parts}
+
+In \textbf{Part 1} of the Titanic Survival project I conduct
+\textbf{Exploratory Data Analisys (EDA)} of the
 \href{https://www.kaggle.com/c/titanic/data}{Kaggle Titanic train
-dataset} in RStudio, through summary tables and visualizations,
+dataset} in R, creating an \textbf{RMarkdown report} with RStudio and
+the \texttt{knitr} package, with summary tables and visualizations,
 performing minor pre-processing as needed.
 
-In Part 2 of the project I intend to write a Python script that
-succintly performs all essential pre-processing steps, emulating a
-production environment.
+In \textbf{Part 2} of the project I perform all the necessary
+pre-processing steps for Machine Learning models, conduct model
+evaluation and regularization, and run predictions using Python in a
+\textbf{Jupyter Notebook}. Given a final model, I run a \textbf{single
+pipeline} for \textbf{pre-processing and modeling} that emulates a
+production environment, where the Titanic test set is used as if it were
+future data never before seen.
+
+\subsection{Part 1 Sections}\label{part-1-sections}
+
+In the \textbf{Contents} we can see how \textbf{Part 1} is divided into
+several sections. After a \textbf{preliminary EDA} we spend most of our
+time \textbf{pre-processing} the data, as usual, and then spend a fair
+amount of time exploring it through \textbf{visualizations}. I tried to
+organize this exploration into \textbf{univariate, bivariate,} and
+\textbf{multivariate} sub-sections, fully aware that the number of
+possible combinations quickly explodes even with a few attributes, so
+this exploration is still mostly ad hoc.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-\section{1. Basic EDA}\label{basic-eda}
+\section{Preliminary EDA}\label{preliminary-eda}
 
 First we load the training data and look at its structure, summary, top
 and bottom rows. We will not look at the test data until it is time to
 test; failing to do so would consist in \emph{data snooping}. In the
 spirit of the Titanic Kaggle kernel, I added the Kaggle Titanic datasets
 a level up on an \texttt{input/} directory.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Load training set }
-\KeywordTok{rm}\NormalTok{(}\DataTypeTok{list=}\KeywordTok{ls}\NormalTok{()) }
-\NormalTok{train <-}\StringTok{ }\KeywordTok{read.csv}\NormalTok{(}\StringTok{"../input/train.csv"}\NormalTok{, }\DataTypeTok{na.strings=}\StringTok{""}\NormalTok{)}
-\KeywordTok{str}\NormalTok{(train)}
-\end{Highlighting}
-\end{Shaded}
 
 \begin{verbatim}
 ## 'data.frame':    891 obs. of  12 variables:
@@ -183,97 +230,96 @@ a level up on an \texttt{input/} directory.
 ##  $ Embarked   : Factor w/ 3 levels "C","Q","S": 3 1 3 3 3 2 3 3 3 1 ...
 \end{verbatim}
 
-There are 891 passengers and 11 attributes (PassengerId is just an
-index) for each passenger.
+There are 891 passengers and 11 attributes (PassengerId is just an index
+not an attribute of a passenger). The attributes are:
 
 \begin{itemize}
 \tightlist
 \item
-  \textbf{Survived}, coded as integer, is a binary indicator and the
-  target outcome or dependent variable we are predicting.
+  \textbf{Survived}, integer, binary indicator (Survived = 1) and the
+  target outcome or dependent variable we are to predict.
 \item
-  \textbf{Pclass}, coded as intger, is an ordinal variable for the
-  passenger class; we could change it to a factor variable with three
-  levels (1st, 2nd, and 3rd class).
+  \textbf{Pclass}, integer, an ordinal variable for the passenger class.
 \item
-  \textbf{Name} has one level per passenger and a common approach would
-  be to extract the title (`Mr.',`Mrs.') from it so as to cull down the
-  number of levels; we will also consider name length.
+  \textbf{Name}, Factor w/ 891 levels (one level per passenger).
 \item
-  \textbf{Sex} is coded as categorical and could be transformed into an
-  indicator such as \texttt{is\_male}.
+  \textbf{Sex}, Factor with two levels: ``female'', ``male''.
 \item
-  \textbf{Age} is numeric and seems to have missing values.
+  \textbf{Age}, numerical, has 177 missing values coded as \texttt{NA}.
 \item
-  \textbf{SibSp} is ordinal (\# of siblings or spouses) and could be
-  converted from integer to factor.
+  \textbf{SibSp}, integer, an ordinal variable for the number of
+  siblings or spouses.
 \item
-  \textbf{Parch} is ordinal (\# of parents or children) and could be
-  converted to factor; it could be combined with SibSp to represent ``\#
-  of relatives''.
+  \textbf{Parch}, integer, an ordinal variable for the number of parents
+  or children.
 \item
-  \textbf{Ticket} is categorical with 681 levels and needs to be culled
-  down if it provides useful information.
+  \textbf{Ticket}, Factor w/ 681 levels.
 \item
-  \textbf{Fare} is numerical and a proxy for wealth or social status.
+  \textbf{Fare}, numerical, is in Pounds Sterling, a proxy for wealth or
+  social status.
 \item
-  \textbf{Cabin} is categorical with 147 levels and needs to be culled
-  down, perhaps by extracting the deck.
+  \textbf{Cabin}, Factor w/ 147 levels, has 687 missing values.
 \item
-  \textbf{Embarked} is categorical with 3 levels, C for Cherbourg, Q for
-  Queenstown, S for Southhampton, the three ports of embarkation.
+  \textbf{Embarked}, Factor w/ 3 levels: ``C'', ``Q'', and ``S'' for the
+  port of embarkation (Cherbourg, Queenstown, and Southhampton), has 2
+  missing values.
 \end{itemize}
 
-\texttt{PassengerId} is just an index. Since R keeps a row index and we
-shouldn't use this variable for modeling, we should drop it, but first
-check that is has no duplicates and has stepwise values (see ``trust but
-verify'' code chunk in the Appendix).
-
-A summary would be more useful if certain variables were converted to
-factor, such as \texttt{Survived},\texttt{Pclass}, \texttt{SibSp}, and
-\texttt{Parch} (see Appendix for code).
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# summary}
+\CommentTok{# Preliminary summary}
 \KeywordTok{summary}\NormalTok{(train)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##  Pclass                                     Name         Sex     
-##  1:216   Abbing, Mr. Anthony                  :  1   female:314  
-##  2:184   Abbott, Mr. Rossmore Edward          :  1   male  :577  
-##  3:491   Abbott, Mrs. Stanton (Rosa Hunt)     :  1               
-##          Abelson, Mr. Samuel                  :  1               
-##          Abelson, Mrs. Samuel (Hannah Wizosky):  1               
-##          Adahl, Mr. Mauritz Nils Martin       :  1               
-##          (Other)                              :885               
-##       Age        SibSp   Parch        Ticket         Fare       
-##  Min.   : 0.42   0:608   0:678   1601    :  7   Min.   :  0.00  
-##  1st Qu.:20.12   1:209   1:118   347082  :  7   1st Qu.:  7.91  
-##  Median :28.00   2: 28   2: 80   CA. 2343:  7   Median : 14.45  
-##  Mean   :29.70   3: 16   3:  5   3101295 :  6   Mean   : 32.20  
-##  3rd Qu.:38.00   4: 18   4:  4   347088  :  6   3rd Qu.: 31.00  
-##  Max.   :80.00   5:  5   5:  5   CA 2144 :  6   Max.   :512.33  
-##  NA's   :177     8:  7   6:  1   (Other) :852                   
-##          Cabin     Embarked   SurvivedFac  SurvivedNum    
-##  B96 B98    :  4   C   :168   0:549       Min.   :0.0000  
-##  C23 C25 C27:  4   Q   : 77   1:342       1st Qu.:0.0000  
-##  G6         :  4   S   :644               Median :0.0000  
-##  C22 C26    :  3   NA's:  2               Mean   :0.3838  
-##  D          :  3                          3rd Qu.:1.0000  
-##  (Other)    :186                          Max.   :1.0000  
+##   PassengerId       Survived          Pclass     
+##  Min.   :  1.0   Min.   :0.0000   Min.   :1.000  
+##  1st Qu.:223.5   1st Qu.:0.0000   1st Qu.:2.000  
+##  Median :446.0   Median :0.0000   Median :3.000  
+##  Mean   :446.0   Mean   :0.3838   Mean   :2.309  
+##  3rd Qu.:668.5   3rd Qu.:1.0000   3rd Qu.:3.000  
+##  Max.   :891.0   Max.   :1.0000   Max.   :3.000  
+##                                                  
+##                                     Name         Sex           Age       
+##  Abbing, Mr. Anthony                  :  1   female:314   Min.   : 0.42  
+##  Abbott, Mr. Rossmore Edward          :  1   male  :577   1st Qu.:20.12  
+##  Abbott, Mrs. Stanton (Rosa Hunt)     :  1                Median :28.00  
+##  Abelson, Mr. Samuel                  :  1                Mean   :29.70  
+##  Abelson, Mrs. Samuel (Hannah Wizosky):  1                3rd Qu.:38.00  
+##  Adahl, Mr. Mauritz Nils Martin       :  1                Max.   :80.00  
+##  (Other)                              :885                NA's   :177    
+##      SibSp           Parch             Ticket         Fare       
+##  Min.   :0.000   Min.   :0.0000   1601    :  7   Min.   :  0.00  
+##  1st Qu.:0.000   1st Qu.:0.0000   347082  :  7   1st Qu.:  7.91  
+##  Median :0.000   Median :0.0000   CA. 2343:  7   Median : 14.45  
+##  Mean   :0.523   Mean   :0.3816   3101295 :  6   Mean   : 32.20  
+##  3rd Qu.:1.000   3rd Qu.:0.0000   347088  :  6   3rd Qu.: 31.00  
+##  Max.   :8.000   Max.   :6.0000   CA 2144 :  6   Max.   :512.33  
+##                                   (Other) :852                   
+##          Cabin     Embarked  
+##  B96 B98    :  4   C   :168  
+##  C23 C25 C27:  4   Q   : 77  
+##  G6         :  4   S   :644  
+##  C22 C26    :  3   NA's:  2  
+##  D          :  3             
+##  (Other)    :186             
 ##  NA's       :687
 \end{verbatim}
 
-Note the high number of missing values in \texttt{Age} and
-\texttt{Cabin}. The 2 NAs in \texttt{Embarked} can be easily dealt with
-by filling in with the most common port of embarkation. Class
-representation in \texttt{Survived},\texttt{Pclass}, and \texttt{Sex}
-appear to be relatively trouble free, yet in \texttt{SibSp},
-\texttt{Parch}, and \texttt{Embarked} we see more skewed distributions.
-\texttt{Fare} is skewed as well.
+This first summary of our data is not very useful and helps us determine
+how to proceed with data pre-processing, converting appropriate
+variables into categorical format, cleaning up variables and imputing
+missing values as needed. I will refrain from commenting on the data
+until pre-processing is mostly finished.
+
+The large number of missing values in \texttt{Cabin} and \texttt{Age}
+will need to be dealt with. The 2 missing values in \texttt{Embarked}
+can be filled in with the most common port of embarkation.
+
+A look at the dataset helps us get a feel for it:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -282,27 +328,27 @@ appear to be relatively trouble free, yet in \texttt{SibSp},
 \end{Shaded}
 
 \begin{verbatim}
-##   Pclass                                                Name    Sex Age
-## 1      3                             Braund, Mr. Owen Harris   male  22
-## 2      1 Cumings, Mrs. John Bradley (Florence Briggs Thayer) female  38
-## 3      3                              Heikkinen, Miss. Laina female  26
-## 4      1        Futrelle, Mrs. Jacques Heath (Lily May Peel) female  35
-## 5      3                            Allen, Mr. William Henry   male  35
-## 6      3                                    Moran, Mr. James   male  NA
-##   SibSp Parch           Ticket    Fare Cabin Embarked SurvivedFac
-## 1     1     0        A/5 21171  7.2500  <NA>        S           0
-## 2     1     0         PC 17599 71.2833   C85        C           1
-## 3     0     0 STON/O2. 3101282  7.9250  <NA>        S           1
-## 4     1     0           113803 53.1000  C123        S           1
-## 5     0     0           373450  8.0500  <NA>        S           0
-## 6     0     0           330877  8.4583  <NA>        Q           0
-##   SurvivedNum
-## 1           0
-## 2           1
-## 3           1
-## 4           1
-## 5           0
-## 6           0
+##   PassengerId Survived Pclass
+## 1           1        0      3
+## 2           2        1      1
+## 3           3        1      3
+## 4           4        1      1
+## 5           5        0      3
+## 6           6        0      3
+##                                                  Name    Sex Age SibSp
+## 1                             Braund, Mr. Owen Harris   male  22     1
+## 2 Cumings, Mrs. John Bradley (Florence Briggs Thayer) female  38     1
+## 3                              Heikkinen, Miss. Laina female  26     0
+## 4        Futrelle, Mrs. Jacques Heath (Lily May Peel) female  35     1
+## 5                            Allen, Mr. William Henry   male  35     0
+## 6                                    Moran, Mr. James   male  NA     0
+##   Parch           Ticket    Fare Cabin Embarked
+## 1     0        A/5 21171  7.2500  <NA>        S
+## 2     0         PC 17599 71.2833   C85        C
+## 3     0 STON/O2. 3101282  7.9250  <NA>        S
+## 4     0           113803 53.1000  C123        S
+## 5     0           373450  8.0500  <NA>        S
+## 6     0           330877  8.4583  <NA>        Q
 \end{verbatim}
 
 \begin{Shaded}
@@ -312,60 +358,99 @@ appear to be relatively trouble free, yet in \texttt{SibSp},
 \end{Shaded}
 
 \begin{verbatim}
-##     Pclass                                     Name    Sex Age SibSp Parch
-## 886      3     Rice, Mrs. William (Margaret Norton) female  39     0     5
-## 887      2                    Montvila, Rev. Juozas   male  27     0     0
-## 888      1             Graham, Miss. Margaret Edith female  19     0     0
-## 889      3 Johnston, Miss. Catherine Helen "Carrie" female  NA     1     2
-## 890      1                    Behr, Mr. Karl Howell   male  26     0     0
-## 891      3                      Dooley, Mr. Patrick   male  32     0     0
-##         Ticket   Fare Cabin Embarked SurvivedFac SurvivedNum
-## 886     382652 29.125  <NA>        Q           0           0
-## 887     211536 13.000  <NA>        S           0           0
-## 888     112053 30.000   B42        S           1           1
-## 889 W./C. 6607 23.450  <NA>        S           0           0
-## 890     111369 30.000  C148        C           1           1
-## 891     370376  7.750  <NA>        Q           0           0
+##     PassengerId Survived Pclass                                     Name
+## 886         886        0      3     Rice, Mrs. William (Margaret Norton)
+## 887         887        0      2                    Montvila, Rev. Juozas
+## 888         888        1      1             Graham, Miss. Margaret Edith
+## 889         889        0      3 Johnston, Miss. Catherine Helen "Carrie"
+## 890         890        1      1                    Behr, Mr. Karl Howell
+## 891         891        0      3                      Dooley, Mr. Patrick
+##        Sex Age SibSp Parch     Ticket   Fare Cabin Embarked
+## 886 female  39     0     5     382652 29.125  <NA>        Q
+## 887   male  27     0     0     211536 13.000  <NA>        S
+## 888 female  19     0     0     112053 30.000   B42        S
+## 889 female  NA     1     2 W./C. 6607 23.450  <NA>        S
+## 890   male  26     0     0     111369 30.000  C148        C
+## 891   male  32     0     0     370376  7.750  <NA>        Q
 \end{verbatim}
-
-EDA also consists of plotting, but before that we should cleanup a bit
-the data, since plotting \texttt{Name} and \texttt{Ticket} as they are
-would be useless.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-\section{2. Preliminary Data Cleaning}\label{preliminary-data-cleaning}
+\section{Pre-Processing 1: PassengerId, Survived,
+Pclass}\label{pre-processing-1-passengerid-survived-pclass}
 
-\begin{itemize}
-\tightlist
-\item
-  Cleaning up Name
-\end{itemize}
+\subsection{PassengerId}\label{passengerid}
 
-A \texttt{Title} attribute would be much more useful. First we use regex
-to extract these titles:
+\texttt{PassengerId} is just an index. Since R keeps a row index and we
+shouldn't use this variable for modeling as it provides no information,
+we drop it, but first check that is has no duplicates and has stepwise
+values to ensure data integrity (see ``trust but verify'' code chunk in
+the Appendix).
+
+\subsection{Survived}\label{survived}
+
+\texttt{Survived} is dropped and \texttt{SurvivedFac} (as categorical
+outcome) and \texttt{SurvivedNum} (as a continuous range from 0 to 1,
+indicating probabilities) are created.
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{# Survived}
+\NormalTok{train}\OperatorTok{$}\NormalTok{SurvivedFac <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Survived}\OperatorTok{==}\StringTok{"1"}\NormalTok{,}\StringTok{"yes"}\NormalTok{,}\StringTok{"no"}\NormalTok{)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{SurvivedFac <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Survived, }\DataTypeTok{levels=}\DecValTok{0}\OperatorTok{:}\DecValTok{1}\NormalTok{, }\DataTypeTok{labels=}\KeywordTok{c}\NormalTok{(}\StringTok{"no"}\NormalTok{,}\StringTok{"yes"}\NormalTok{))}
+\NormalTok{train}\OperatorTok{$}\NormalTok{SurvivedNum <-}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(train}\OperatorTok{$}\NormalTok{Survived) }
+\NormalTok{train}\OperatorTok{$}\NormalTok{Survived <-}\StringTok{ }\OtherTok{NULL} \CommentTok{# drop original}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Pclass}\label{pclass}
+
+\texttt{Pclass} is dropped and \texttt{PclassFac} (as categorical) and
+\texttt{PclassNum} (as ordinal) are created. The former is useful for
+plotting, the latter for machine learning.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Pclass}
+\NormalTok{train}\OperatorTok{$}\NormalTok{PclassFac <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Pclass}\OperatorTok{==}\DecValTok{1}\NormalTok{, }\StringTok{"1st Class"}\NormalTok{, }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Pclass}\OperatorTok{==}\DecValTok{2}\NormalTok{, }\StringTok{"2nd Class"}\NormalTok{, }\StringTok{"3rd Class"}\NormalTok{))}
+\NormalTok{train}\OperatorTok{$}\NormalTok{PclassFac <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{PclassFac)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{PclassNum <-}\StringTok{ }\KeywordTok{as.integer}\NormalTok{(train}\OperatorTok{$}\NormalTok{Pclass)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Pclass <-}\StringTok{ }\OtherTok{NULL}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\section{Pre-Processing 2: Name, Sex}\label{pre-processing-2-name-sex}
+
+The \texttt{Name} attribute is not indicative of a person's survival,
+yet information can be extracted from it such as titles and name
+lengths, which might contain some predictive power.
+
+A \texttt{Title} attribute can be created by extracting titles with
+regular expresssions.
+
+\subsection{Title}\label{title}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Create Title attribute}
 \NormalTok{train}\OperatorTok{$}\NormalTok{Title <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"character"}\NormalTok{,}\DataTypeTok{length=}\KeywordTok{nrow}\NormalTok{(train))}
 \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
 \NormalTok{    x <-}\StringTok{ }\KeywordTok{as.character}\NormalTok{(train}\OperatorTok{$}\NormalTok{Name[i])}
 \NormalTok{    m <-}\StringTok{ }\KeywordTok{regexec}\NormalTok{(}\StringTok{",(}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{s+}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{w+)+}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{."}\NormalTok{, x) }
 \NormalTok{    train}\OperatorTok{$}\NormalTok{Title[i] <-}\StringTok{ }\KeywordTok{unlist}\NormalTok{(}\KeywordTok{strsplit}\NormalTok{(}\KeywordTok{unlist}\NormalTok{(}\KeywordTok{regmatches}\NormalTok{(x,m)),}\StringTok{" "}\NormalTok{))[}\DecValTok{2}\NormalTok{]}
 \NormalTok{\}}
-\CommentTok{# fixing a particular case}
-\NormalTok{train}\OperatorTok{$}\NormalTok{Title[train}\OperatorTok{$}\NormalTok{Title }\OperatorTok{==}\StringTok{ "the"}\NormalTok{] <-}\StringTok{ "the Countess"}
 \CommentTok{# looking at unique titles}
 \KeywordTok{unique}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-##  [1] "Mr."          "Mrs."         "Miss."        "Master."     
-##  [5] "Don."         "Rev."         "Dr."          "Mme."        
-##  [9] "Ms."          "Major."       "Lady."        "Sir."        
-## [13] "Mlle."        "Col."         "Capt."        "the Countess"
-## [17] "Jonkheer."
+##  [1] "Mr."       "Mrs."      "Miss."     "Master."   "Don."     
+##  [6] "Rev."      "Dr."       "Mme."      "Ms."       "Major."   
+## [11] "Lady."     "Sir."      "Mlle."     "Col."      "Capt."    
+## [16] "the"       "Jonkheer."
 \end{verbatim}
 
 There are 17 levels which seem unnecessary as some of these titles are
@@ -373,120 +458,242 @@ specific and rare, so we can bin them into two rare categories, one for
 males and one for females, since the probability of survival is highly
 dependent on gender.
 
+I will not fix the title \textbf{the}, which stands for \textbf{the
+Countess}, since any specific fixes will not be generalizable to any
+future data (aka the test set) in production. Instead, I am hoping no
+other specific male titles (such as \textbf{the Count}) will pop up in
+the test data and will use the above rare male titles as baseline for
+the rare cases, all other rare cases will end up in the rare female
+bucket.
+
 Note that some decisions are simplifications, there is a female doctor
-(Dr.~Alice Leader, who survived) yet I assigned `Dr.' to the mostly rare
-male title category.
+(Dr.~Alice Leader) yet I assigned `Dr.' to the rare male title category
+since at that time most doctors were males.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{rareMale <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Don."}\NormalTok{,}\StringTok{"Rev."}\NormalTok{,}\StringTok{"Dr."}\NormalTok{,}\StringTok{"Major."}\NormalTok{,}\StringTok{"Master."}\NormalTok{, }\StringTok{"Sir."}\NormalTok{,}\StringTok{"Col."}\NormalTok{,}\StringTok{"Capt."}\NormalTok{,}\StringTok{"Jonkheer."}\NormalTok{)}
-\NormalTok{rareFemale <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Mme."}\NormalTok{,}\StringTok{"Ms."}\NormalTok{,}\StringTok{"Lady."}\NormalTok{,}\StringTok{"Mlle."}\NormalTok{,}\StringTok{"the Countess"}\NormalTok{)}
+\CommentTok{# Clean up Title}
+\NormalTok{common_titles <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Mr."}\NormalTok{, }\StringTok{"Mrs."}\NormalTok{, }\StringTok{"Miss."}\NormalTok{)}
+\NormalTok{rare_male <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Don."}\NormalTok{,}\StringTok{"Rev."}\NormalTok{,}\StringTok{"Dr."}\NormalTok{,}\StringTok{"Major."}\NormalTok{,}\StringTok{"Master."}\NormalTok{, }\StringTok{"Sir."}\NormalTok{,}\StringTok{"Col."}\NormalTok{,}\StringTok{"Capt."}\NormalTok{,}\StringTok{"Jonkheer."}\NormalTok{)}
 \ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
-\NormalTok{    train}\OperatorTok{$}\NormalTok{Title[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{rareMale, }\StringTok{"rareMale"}\NormalTok{,}
-                      \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{rareFemale, }\StringTok{"rareFemale"}\NormalTok{, train}\OperatorTok{$}\NormalTok{Title[i]))}
+\NormalTok{    train}\OperatorTok{$}\NormalTok{Title[i] <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{common_titles, train}\OperatorTok{$}\NormalTok{Title[i], }\CommentTok{# do not replace}
+                             \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{rare_male, }\StringTok{"rareMale"}\NormalTok{, }\StringTok{"rareFemale"}\NormalTok{))}
 \NormalTok{\}}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Title <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title)}
 \CommentTok{# unique titles}
 \KeywordTok{unique}\NormalTok{(train}\OperatorTok{$}\NormalTok{Title)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-## [1] "Mr."        "Mrs."       "Miss."      "rareMale"   "rareFemale"
+## [1] Mr.        Mrs.       Miss.      rareMale   rareFemale
+## Levels: Miss. Mr. Mrs. rareFemale rareMale
 \end{verbatim}
 
 Before dropping name entirely, we can informally test a common
 assumption that the length of a name is associated positively with
-higher socio-economic status and therefore survivability.
+higher socio-economic status and therefore survivability. (See Appendix
+for the \texttt{NameLength} code.)
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# create NameLength attribute}
-\NormalTok{train}\OperatorTok{$}\NormalTok{NameLength <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"numeric"}\NormalTok{, }\KeywordTok{nrow}\NormalTok{(train))}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
-\NormalTok{    train}\OperatorTok{$}\NormalTok{NameLength[i] <-}\StringTok{ }\KeywordTok{nchar}\NormalTok{(}\KeywordTok{as.character}\NormalTok{(train}\OperatorTok{$}\NormalTok{Name)[i])}
-\NormalTok{\}}
-\CommentTok{# see whether this attribute has any meat to it}
-\KeywordTok{plot}\NormalTok{(train}\OperatorTok{$}\NormalTok{NameLength, train}\OperatorTok{$}\NormalTok{Fare, }
-    \DataTypeTok{pch=}\DecValTok{19}\NormalTok{, }\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DataTypeTok{alpha=}\FloatTok{0.2}\NormalTok{),}
-    \DataTypeTok{xlab=}\StringTok{"Name Length (chars)"}\NormalTok{, }
-    \DataTypeTok{ylab=}\StringTok{"Fare (Pounds)"}\NormalTok{)}
-\KeywordTok{abline}\NormalTok{(}\KeywordTok{lm}\NormalTok{(train}\OperatorTok{$}\NormalTok{Fare }\OperatorTok{~}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{NameLength), }\DataTypeTok{col=}\StringTok{"red"}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
+\subsection{NameLength}\label{namelength}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-9-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-10-1.pdf}
 
 While the evidence isn't particularly strong, we might as well keep
 \texttt{NameLength} in the mix just to see whether it improves modeling
-later on. Now we can drop \texttt{Name}.
+later on. Now we could drop \texttt{Name}, but will do so after some
+further cleaning as we use this for EDA later.
+
+\subsection{Sex: GenederFac, IsMale}\label{sex-genederfac-ismale}
+
+The variable \texttt{Sex} is usually best represented as a binary
+indicator for a given gender in machine learning, however, for plotting
+purposes we keep a categorical representation, creating
+\texttt{GenderFac} and \texttt{IsMale} wherein Male=1.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# dropping Name }
-\NormalTok{train}\OperatorTok{$}\NormalTok{Name <-}\StringTok{ }\OtherTok{NULL} 
+\NormalTok{train}\OperatorTok{$}\NormalTok{GenderFac <-}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Sex }\CommentTok{# factor for plotting}
+\NormalTok{train}\OperatorTok{$}\NormalTok{IsMale <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Sex}\OperatorTok{==}\StringTok{"male"}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{) }\CommentTok{# indicator for ML}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Sex <-}\StringTok{ }\OtherTok{NULL} \CommentTok{# drop original}
 \end{Highlighting}
 \end{Shaded}
 
-\begin{itemize}
-\tightlist
-\item
-  Cleaning up Ticket
-\end{itemize}
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-After cleaning this feature (see Appendix), the distribution is as
-follows:
+\section{Pre-Processing 3: SibSp,
+Parch}\label{pre-processing-3-sibsp-parch}
+
+We conveniently rename \texttt{SibSp} and \texttt{Parch} to
+\texttt{SiblingSpouse} and \texttt{ParentChildren} and create a variable
+that is a sum of the two: \texttt{NumRelatives}.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\CommentTok{# look at distribution within levels}
-\KeywordTok{table}\NormalTok{(train}\OperatorTok{$}\NormalTok{TicketClean)}
+\CommentTok{# Change SibSp and Parch to factor}
+\NormalTok{train}\OperatorTok{$}\NormalTok{SiblingSpouse <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{SibSp)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{ParentChildren <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Parch)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{NumRelatives <-}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{SibSp }\OperatorTok{+}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Parch}
+\NormalTok{train}\OperatorTok{$}\NormalTok{NumRelatives <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{NumRelatives)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{SibSp <-}\StringTok{ }\OtherTok{NULL}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Parch <-}\StringTok{ }\OtherTok{NULL}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\section{Pre-Processing 4: Ticket,
+Fare}\label{pre-processing-4-ticket-fare}
+
+\subsection{Ticket}\label{ticket}
+
+The \texttt{Ticket} attribute is somewhat useless as far as extracting
+information from the ticket number itself. What the ticket number does
+provide, however, is information on how many tickets were purchased
+under a given \texttt{Fare}, such that we can calculate the \textbf{fare
+per person}, which is what we need since our observational unit (a row)
+is a person.
+
+Here is a sample of how there are repeated ticket numbers under the same
+fare:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# EDA into Ticket and Fare}
+\NormalTok{temp_dfm <-}\StringTok{ }\NormalTok{train[, }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%in%}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Name"}\NormalTok{,}\StringTok{"Ticket"}\NormalTok{,}\StringTok{"Fare"}\NormalTok{)]}
+\NormalTok{temp_dfm <-}\StringTok{ }\NormalTok{temp_dfm[}\KeywordTok{order}\NormalTok{(temp_dfm[}\StringTok{"Ticket"}\NormalTok{]),] }\CommentTok{# order by Ticket}
+\NormalTok{temp_dfm[}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{,]}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-## 
-##      A4      A5      AS       C      CA CASOTON      Fa      FC     FCC 
-##       7      21       1       5      41       1       1       1       5 
-##    LINE   Other      PC      PP     PPP      SC    SCA4    SCAH    SCOW 
-##       4     661      60       3       2       1       1       3       1 
-## SCPARIS     SOC     SOP    SOPP SOTONO2 SOTONOQ      SP    SWPP      WC 
-##      11       6       1       3      20      15       1       2      10 
-##     WEP 
-##       3
+##                                                         Name Ticket  Fare
+## 258                                     Cherry, Miss. Gladys 110152 86.50
+## 505                                    Maioni, Miss. Roberta 110152 86.50
+## 760 Rothes, the Countess. of (Lucy Noel Martha Dyer-Edwards) 110152 86.50
+## 263                                        Taussig, Mr. Emil 110413 79.65
+## 559                   Taussig, Mrs. Emil (Tillie Mandelbaum) 110413 79.65
+## 586                                      Taussig, Miss. Ruth 110413 79.65
+## 111                           Porter, Mr. Walter Chamberlain 110465 52.00
+## 476                              Clifford, Mr. George Quincy 110465 52.00
+## 431                Bjornstrom-Steffansson, Mr. Mauritz Hakan 110564 26.55
+## 367         Warren, Mrs. Frank Manley (Anna Sophia Atkinson) 110813 75.25
 \end{verbatim}
 
-Since the ``Other'' level is so overbearingly dominant and there are too
-many unrepresented categories, it is unlikely that a lot of useful
-information can be gathered from \texttt{Ticket} so we just drop this
-attribute altogether.
+There are many cases of families with the same last name (such as the
+Taussig above) which leads us to believe that these are not individual
+prices but group prices under the same ticket. So we keep
+\texttt{Ticket} only to clean fare.
 
-\begin{itemize}
-\tightlist
-\item
-  Cleaning up Cabin
-\end{itemize}
+\subsection{Fare}\label{fare}
 
-Cabin has 687 NAs and 147 levels yet cabin locations might be important
-in determining survivability, since the accident happened late at night
-when people were mostly in their cabins, and lower-letter cabins were
-near the deck while higher-letter cabins were near the keel where the
-ship hit the iceberg.
+We create a \texttt{FarePerPerson} attribute and compare it to the
+\texttt{Fare} attribute:
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"character"}\NormalTok{, }\KeywordTok{nrow}\NormalTok{(train))}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\KeywordTok{nrow}\NormalTok{(train)) \{}
-  \CommentTok{# ID digits and white space}
-\NormalTok{    pattern <-}\StringTok{ "[0-9]*|}\CharTok{\textbackslash{}\textbackslash{}}\StringTok{s"}
-  \CommentTok{# reduce to only first letter given multiple cabins}
-\NormalTok{    train}\OperatorTok{$}\NormalTok{CabinClean[i] <-}\StringTok{ }\KeywordTok{substr}\NormalTok{(}\KeywordTok{gsub}\NormalTok{(pattern, }\StringTok{""}\NormalTok{, train}\OperatorTok{$}\NormalTok{Cabin[i]),}\DecValTok{1}\NormalTok{,}\DecValTok{1}\NormalTok{)}
-    \CommentTok{# bin letters higher than F to the F category}
-\NormalTok{    high_cabins <-}\StringTok{ }\KeywordTok{toupper}\NormalTok{(letters[letters }\OperatorTok{>}\StringTok{"f"}\NormalTok{])}
-    \ControlFlowTok{if}\NormalTok{ (train}\OperatorTok{$}\NormalTok{CabinClean[i] }\OperatorTok{%in%}\StringTok{ }\NormalTok{high_cabins) train}\OperatorTok{$}\NormalTok{CabinClean[i] <-}\StringTok{ "F"}
+\CommentTok{# keep counts of tickets}
+\NormalTok{counts <-}\StringTok{ }\KeywordTok{aggregate}\NormalTok{(train}\OperatorTok{$}\NormalTok{Ticket, }\DataTypeTok{by=}\KeywordTok{list}\NormalTok{(train}\OperatorTok{$}\NormalTok{Ticket), }
+                      \DataTypeTok{FUN=}\ControlFlowTok{function}\NormalTok{(ticket) }\KeywordTok{sum}\NormalTok{(}\OperatorTok{!}\KeywordTok{is.na}\NormalTok{(ticket)))}
+\CommentTok{# function that takes a data frame's fare and ticket counts and apply}
+\NormalTok{divide_fare_count <-}\StringTok{ }\ControlFlowTok{function}\NormalTok{(dfm) \{}
+\NormalTok{  fare <-}\StringTok{ }\KeywordTok{as.numeric}\NormalTok{(dfm[}\StringTok{"Fare"}\NormalTok{])}
+  \CommentTok{# ticket counts}
+\NormalTok{  count_given_ticket <-}\StringTok{ }\NormalTok{counts[}\KeywordTok{which}\NormalTok{(counts[,}\DecValTok{1}\NormalTok{] }\OperatorTok{==}\StringTok{ }\NormalTok{dfm[}\StringTok{"Ticket"}\NormalTok{]), }\DecValTok{2}\NormalTok{]}
+\NormalTok{  result <-}\StringTok{ }\KeywordTok{round}\NormalTok{(fare}\OperatorTok{/}\NormalTok{count_given_ticket,}\DecValTok{2}\NormalTok{)}
+  \KeywordTok{return}\NormalTok{(result)}
 \NormalTok{\}}
-\CommentTok{# replace old Cabin}
-\NormalTok{train}\OperatorTok{$}\NormalTok{Cabin <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{CabinClean)}
-\NormalTok{train}\OperatorTok{$}\NormalTok{CabinClean <-}\StringTok{ }\OtherTok{NULL}
+\CommentTok{# create FarePerPerson}
+\NormalTok{train}\OperatorTok{$}\NormalTok{FarePerPerson <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(}\DataTypeTok{X=}\NormalTok{train, }\DataTypeTok{MARGIN=}\DecValTok{1}\NormalTok{, }\DataTypeTok{FUN=}\NormalTok{divide_fare_count)}
+
+\CommentTok{# looking at the temp dataframe of results again}
+\NormalTok{chosen <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Name"}\NormalTok{,}\StringTok{"Ticket"}\NormalTok{,}\StringTok{"Fare"}\NormalTok{,}\StringTok{"FarePerPerson"}\NormalTok{)}
+\NormalTok{temp_dfm <-}\StringTok{ }\NormalTok{train[, }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%in%}\StringTok{ }\NormalTok{chosen]}
+\NormalTok{temp_dfm <-}\StringTok{ }\NormalTok{temp_dfm[}\KeywordTok{order}\NormalTok{(temp_dfm[}\StringTok{"Ticket"}\NormalTok{]),] }\CommentTok{# order by Ticket}
+\NormalTok{temp_dfm[}\DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{,]}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##                                                         Name Ticket  Fare
+## 258                                     Cherry, Miss. Gladys 110152 86.50
+## 505                                    Maioni, Miss. Roberta 110152 86.50
+## 760 Rothes, the Countess. of (Lucy Noel Martha Dyer-Edwards) 110152 86.50
+## 263                                        Taussig, Mr. Emil 110413 79.65
+## 559                   Taussig, Mrs. Emil (Tillie Mandelbaum) 110413 79.65
+## 586                                      Taussig, Miss. Ruth 110413 79.65
+## 111                           Porter, Mr. Walter Chamberlain 110465 52.00
+## 476                              Clifford, Mr. George Quincy 110465 52.00
+## 431                Bjornstrom-Steffansson, Mr. Mauritz Hakan 110564 26.55
+## 367         Warren, Mrs. Frank Manley (Anna Sophia Atkinson) 110813 75.25
+##     FarePerPerson
+## 258         28.83
+## 505         28.83
+## 760         28.83
+## 263         26.55
+## 559         26.55
+## 586         26.55
+## 111         26.00
+## 476         26.00
+## 431         26.55
+## 367         75.25
+\end{verbatim}
+
+We can now drop \texttt{Fare}, \texttt{Name}, and \texttt{Ticket}, but
+we can keep the ticket counts as its own attribute \texttt{TicketCount}:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# create TicketCount}
+\NormalTok{train}\OperatorTok{$}\NormalTok{TicketCount <-}\StringTok{ }\KeywordTok{apply}\NormalTok{(}\DataTypeTok{X=}\NormalTok{train, }\DataTypeTok{MARGIN=}\DecValTok{1}\NormalTok{, }\DataTypeTok{FUN=}\ControlFlowTok{function}\NormalTok{(dfm) counts[}\KeywordTok{which}\NormalTok{(counts[,}\DecValTok{1}\NormalTok{] }\OperatorTok{==}\StringTok{ }\NormalTok{dfm[}\StringTok{"Ticket"}\NormalTok{]), }\DecValTok{2}\NormalTok{])}
+\CommentTok{# drop Fare, Name, and Ticket}
+\StringTok{'%ni%'}\NormalTok{ <-}\StringTok{ }\KeywordTok{Negate}\NormalTok{(}\StringTok{'%in%'}\NormalTok{)}
+\NormalTok{not_chosen <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Fare"}\NormalTok{,}\StringTok{"Name"}\NormalTok{,}\StringTok{"Ticket"}\NormalTok{)}
+\NormalTok{train <-}\StringTok{ }\NormalTok{train[,}\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{not_chosen]}
+\end{Highlighting}
+\end{Shaded}
+
+Since \texttt{FarePerPerson} has a skewed distribution (as we shall see
+in the Graphical EDA section) we create a \texttt{FarePerPErsonLog}
+variable which will help with linear models.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# create FareLog}
+\NormalTok{train}\OperatorTok{$}\NormalTok{FarePerPersonLog <-}\StringTok{ }\KeywordTok{log}\NormalTok{(train}\OperatorTok{$}\NormalTok{FarePerPerson}\OperatorTok{+}\DecValTok{1}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{names}\NormalTok{(train)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  [1] "Age"              "Cabin"            "Embarked"        
+##  [4] "SurvivedFac"      "SurvivedNum"      "PclassFac"       
+##  [7] "PclassNum"        "Title"            "NameLength"      
+## [10] "GenderFac"        "IsMale"           "SiblingSpouse"   
+## [13] "ParentChildren"   "NumRelatives"     "FarePerPerson"   
+## [16] "TicketCount"      "FarePerPersonLog"
+\end{verbatim}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\section{Pre-Processing 5: Cabin,
+Embarked}\label{pre-processing-5-cabin-embarked}
+
+\subsection{Cabin}\label{cabin}
+
+\texttt{Cabin} has 687 NAs and 147 levels yet cabin locations might be
+important in determining survivability, since the accident happened late
+at night when people were mostly in their cabins, and lower-letter
+cabins were near the deck while higher-letter cabins were near the keel
+where the ship hit the iceberg.
+
+\begin{Shaded}
+\begin{Highlighting}[]
 \KeywordTok{summary}\NormalTok{(train}\OperatorTok{$}\NormalTok{Cabin)}
 \end{Highlighting}
 \end{Shaded}
@@ -500,404 +707,72 @@ We now have good representations in all cabins and not too many levels
 but still a lot of missing values, we'll deal with those later as
 needed.
 
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+\subsection{Embarked}\label{embarked}
 
-\section{3. Graphical Exploratory Data
-Analysis}\label{graphical-exploratory-data-analysis}
+We substitute the letters for port names and impute the two missing
+cases with the majority class.
 
-Now that we have the data in a basic shape for graphical EDA, we can try
-understanding the underlying distributions and associations of this
-training set better, remembering that this is just a sample so our
-findings are not necessarily representative of the truth, albeit in our
-case the sample is quite large, but I am always careful about making
-strong conclusions about a population when using sample data.
-
-\subsection{Univariate EDA}\label{univariate-eda}
-
-In this section we look at feature distributions one at a time. A few
-quick plots of the class imbalances in \textbf{Survived, Passenger
-Class,} and \textbf{Sex} give us a better understanding of these
-attributes:
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-15-1.pdf}
-
-Majorities did not survive, purchased 3rd class tickets, and were males,
-so being female and higher class is an indicator of survival, as
-expected.
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-16-1.pdf}
-
-Most people were in Cabin C and yet the distribution is not too skewed,
-while a vast majority embarked in Southhampton. Most titles are Mr., and
-rare female titles are barely represented.
-
-Tackling the distributions of the two numerical variables \texttt{Age}
-and \texttt{Fare}:
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-17-1.pdf}
-
-Ages are as expected roughtly normally distributed, with some older
-folks positively skewing the distribution. We will consider binning this
-variable and selecting age groups such as Children, Teenagers, Adults,
-and Elderly, after imputation of missing values. Fares are, as expected,
-quite skewed, so we could consider taking the log (blue distribution
-above, scaled up for ease of comparison).
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-18-1.pdf}
-
-Since the distributions are similarly skewed, we could potentially
-combine the Siblings/Spouse and Parents/Children attributes into a
-single ``Number of Relatives'' attribute.
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{train}\OperatorTok{$}\NormalTok{Embarked <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Embarked}\OperatorTok{==}\StringTok{"C"}\NormalTok{,}\StringTok{"Cherbourg"}\NormalTok{,}
+                         \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Embarked}\OperatorTok{==}\StringTok{"Q"}\NormalTok{,}\StringTok{"Queensland"}\NormalTok{,}\StringTok{"Southhampton"}\NormalTok{))}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Embarked[}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Embarked)] <-}\StringTok{ "Southhampton"}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Embarked <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{Embarked) }\CommentTok{# re-factoring}
+\end{Highlighting}
+\end{Shaded}
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
-\subsection{Bivariate EDA}\label{bivariate-eda}
+\section{Pre-Processing 6: Age}\label{pre-processing-6-age}
 
-Looking at our variables again:
+\subsection{Imputing Missing Values}\label{imputing-missing-values}
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{names}\NormalTok{(train)}
-\end{Highlighting}
-\end{Shaded}
+The \texttt{Age} variable had to be considered at the end of
+pre-processing since we will be doing some pre-modeling (modeling during
+data pre-processing) to impute missing values and needed other variables
+to be relatively clean before this pre-modeling stage.
 
-\begin{verbatim}
-##  [1] "Pclass"      "Sex"         "Age"         "SibSp"       "Parch"      
-##  [6] "Fare"        "Cabin"       "Embarked"    "SurvivedFac" "SurvivedNum"
-## [11] "Title"       "NameLength"
-\end{verbatim}
-
-There are \((n * (n-1)) / 2 = (11 * 10)/2 = 55\) possible bivariate
-combinations (regardless of order) of our 11 variables. We can compute
-bivariate and higher-order combinations with the \texttt{combn()}
-function:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# combinations}
-\KeywordTok{head}\NormalTok{(}\KeywordTok{t}\NormalTok{(}\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{combn}\NormalTok{(}\DecValTok{11}\NormalTok{, }\DecValTok{2}\NormalTok{))))}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##    [,1] [,2]
-## X1    1    2
-## X2    1    3
-## X3    1    4
-## X4    1    5
-## X5    1    6
-## X6    1    7
-\end{verbatim}
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{tail}\NormalTok{(}\KeywordTok{t}\NormalTok{(}\KeywordTok{data.frame}\NormalTok{(}\KeywordTok{combn}\NormalTok{(}\DecValTok{11}\NormalTok{, }\DecValTok{2}\NormalTok{))))}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-##     [,1] [,2]
-## X50    8    9
-## X51    8   10
-## X52    8   11
-## X53    9   10
-## X54    9   11
-## X55   10   11
-\end{verbatim}
-
-One way to plot all of these at once is using a scatterplot matrix. The
-\texttt{plot()} function will do this in R, when passed a \textbf{data
-frame}. Since it is hard to visualize 55 combinations, let's narrow down
-to a few choice attributes:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Scatterplot matrix}
-\NormalTok{chosen <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"SurvivedNum"}\NormalTok{, }\StringTok{"Pclass"}\NormalTok{, }\StringTok{"Sex"}\NormalTok{,}\StringTok{"Age"}\NormalTok{,}\StringTok{"Fare"}\NormalTok{,}\StringTok{"Embarked"}\NormalTok{)}
-\KeywordTok{plot}\NormalTok{(train[,}\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%in%}\StringTok{ }\NormalTok{chosen])}
-\end{Highlighting}
-\end{Shaded}
+It is helpful to visualize the distribution of ages before and after a
+certain imputing strategy to see the effect it has on the data. The
+common practice of imputing with measures of center such as the mean or
+the median (in our case there wouldn't be much of a difference as the
+distribution is approximately normal) distorts the distribution. To show
+this effectively, the y axes must agree:
 
 \includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-21-1.pdf}
 
-Notice how numerical attributes (\texttt{Age} and \texttt{Fare}) combine
-well into a scatterplot, yet other attributes are not plotted exactly as
-we might want. Since the problem space will only increase with
-higher-dimensional combinations, we select only a few choice pairs to
-consider. One approach is to compare each of the other ten features with
-our \texttt{Survived} outcome.
+Imputing medians amounts to deciding that when we do not know an age, we
+will classify this person as a young adult.
 
-\subsection{Interactions with
-Survival}\label{interactions-with-survival}
-
-\begin{itemize}
-\tightlist
-\item
-  1 Survived \& Pclass
-\end{itemize}
-
-A mosaic plot shows neatly this interaction:
-
-\begin{verbatim}
-## Warning: package 'ggmosaic' was built under R version 3.5.3
-\end{verbatim}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-22-1.pdf}
-
-It would seem that folks in first class and second class had it better
-than those in third class. What the mosaic plot shows is also the
-comparative size of the populations of these three classes (in our
-training sample of course).
-
-\begin{itemize}
-\tightlist
-\item
-  2 Survived \& Sex
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-23-1.pdf}
-
-Females were much more likely to survive, and the majority of the
-passengers was male.
-
-\begin{itemize}
-\tightlist
-\item
-  3 Survived \& Age
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-24-1.pdf}
-
-As expected, the probability of survival declines with age, as shown by
-the linear fit, which is quite similar to the logistic fit (a sinusoidal
-curve) as survival is not rare and the distribution of ages is roughly
-normal (as we noted in the univariate EDA), so we observe mid-range
-probabilities.
-
-\begin{itemize}
-\tightlist
-\item
-  4 Survived \& SibSp
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-25-1.pdf}
-
-Having one sibling or spouse is most indicative of survival, followed by
-two, then none, then four and up. The probability of survival is very
-low for higher numbers but our confidence that this is the case should
-decrease because there is gradually less evidence for this effect, given
-the smaller sample sizes as shown in the mosaic plot.
-
-\begin{itemize}
-\tightlist
-\item
-  5 Survived \& Parch
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-26-1.pdf}
-
-Similar results to those observed in the previous plot are seen, except
-for the higher probability of survival for someone with 3 (presumably)
-children, yet again, since the sample sizes are small, we should not
-take this finding too seriously.
-
-When \textbf{feature engineering} we will take into account these
-findings to select the best method to create our indicator variables.
-
-\begin{itemize}
-\tightlist
-\item
-  6 Survived \& Fare
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-27-1.pdf}
-
-Unlike the plot of Survival by Age, we observe extreme probabilities
-given the skewed distribution of Fare, which shows how survival is
-increasingly more probable the higher the fare.
-
-We can explore creating a log of Fare which could be used in modeling,
-as some models (i.e.~linear models) would benefit from this logged
-variable as opposed to the original Fare attribute.
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-28-1.pdf}
-
-The \texttt{FareLog} variable will indeed be useful for linear modeling.
-
-\begin{itemize}
-\tightlist
-\item
-  7 Survived \& Cabin
-\end{itemize}
-
-Since our data has so many missing values for cabin, our confidence in
-the results of this plot should be decreased.
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-29-1.pdf}
-
-It would appear that perhaps cabin is not as associated with
-survivability as we had hoped for, given that A cabins are on the deck
-and F cabins near the keel where the ship hit the iceberg.
-
-\begin{itemize}
-\tightlist
-\item
-  8 Survived \& Embarked
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-30-1.pdf}
-
-There seems to be some evidence that having embarked in Southhampton is
-an indicator of higher probability of survival.
-
-We can explore port of embarkation in a more nuanced manner by
-considering the fares paid at each port, and whether survivability
-appears to me more associated with the fare or the port embarked. We use
-the log of fares since it would be hard to observe any differences in
-the boxplots given the highly skewed distribution of fare.
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-31-1.pdf}
-
-Several curiosities pop out in this plot. First, Southhampton's higher
-survivability is not entirely associated with fare, since Cherbourg
-seems to have a higher survivability when considering fare. Second,
-Queenstown's seems to go against common sense in that higher fares
-aren't necessarily associated with higher survivability. Lastly, the
-difference in survivability according to fare varies from port to port,
-for example, we see a more pronounced difference in Cherbourg, and
-almost no difference in Queenstown.
-
-\begin{itemize}
-\tightlist
-\item
-  9 Survival and Title
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-32-1.pdf}
-
-Title can be seen as a proxy for gender and as we've seen, females
-survived a lot better than males. It is worth keeping this attribute as
-it shows some granularity in what kinds of folks survived better within
-gender groups, i.e.~those with rare titles.
-
-\begin{itemize}
-\tightlist
-\item
-  10 Survived and NameLength
-\end{itemize}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-33-1.pdf}
-
-Longer names do appear to have some association with higher
-probabilities of survival so we are also keeping this feature. It might
-just be capturing the association of longer names and wealth, but since
-in machine learning we do not care about multicollinearity issues, we
-will test whether to keep this attribute or not during our feature
-selection modeling phase.
-
-\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
-
-\subsection{Multi-dimensional EDA}\label{multi-dimensional-eda}
-
-The higher-dimensional problem space of combinations with 11 variables
-is as follows:
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\CommentTok{# Combinations of 3 or more variables quickly explode}
-\NormalTok{vars <-}\StringTok{ }\DecValTok{1}\OperatorTok{:}\DecValTok{11}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{2}\OperatorTok{:}\DecValTok{9}\NormalTok{) \{}
-\NormalTok{    num <-}\StringTok{ }\KeywordTok{length}\NormalTok{(}\KeywordTok{combn}\NormalTok{(vars,i))}\OperatorTok{/}\NormalTok{i}
-    \KeywordTok{print}\NormalTok{(}\KeywordTok{paste}\NormalTok{(}\StringTok{"There are "}\NormalTok{, num, }\StringTok{"combinations of 11 variables taken"}\NormalTok{, i, }\StringTok{"at a time."}\NormalTok{))}
-\NormalTok{\}}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## [1] "There are  55 combinations of 11 variables taken 2 at a time."
-## [1] "There are  165 combinations of 11 variables taken 3 at a time."
-## [1] "There are  330 combinations of 11 variables taken 4 at a time."
-## [1] "There are  462 combinations of 11 variables taken 5 at a time."
-## [1] "There are  462 combinations of 11 variables taken 6 at a time."
-## [1] "There are  330 combinations of 11 variables taken 7 at a time."
-## [1] "There are  165 combinations of 11 variables taken 8 at a time."
-## [1] "There are  55 combinations of 11 variables taken 9 at a time."
-\end{verbatim}
-
-The number of combinations is complementary (adding up to 11): 6 = 5, 7
-= 4, etc., so when considering combinations of 9 variables, we are just
-considering the complement of 2 variables.
-
-Of the 165 trivariate combinations, 45 alone are possibilities that
-interact with our outcome \texttt{Survival} -- clearly too many to
-consider, so our approach will by means of necessity be minimal and
-select, but I wanted to make the size of the entire enterprise known.
-
-\subsection{Age Categories and
-Imputation}\label{age-categories-and-imputation}
-
-To make matters worse, I am breaking down the \texttt{Age} continuous
-variable into four new features by age group: \texttt{Child} (\(0-12\))
-\texttt{Teen} (\(13-19\)), \texttt{YoungAdult} (\(20-35\)),
-\texttt{MiddleAged} (\(36-55\)), and \texttt{Elderly} (\(56-80\)). While
-some of these age groups might seem young by 2019's standards, at the
-time of the Titanic's maiden voyage, I believe they more accurately
-reflect the respective age groups, as evidenced by the distribution
-below. This breakdown will help later with machine learning but also
-help EDA in exploring age groups in a discrete manner.
-
-Before we actually create these features, however, we need to impute the
-missing values. One strategy is to use a mean or median age, which would
-unnecessarily inflate the \texttt{YoungAdult} variable, as seen in the
-second plot below.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{Child <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{0} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{13}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
-\NormalTok{Teen <-}\StringTok{  }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{12} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{20}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
-\NormalTok{YoungAdult <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{19} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{36}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
-\NormalTok{MiddleAged <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{35} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{56}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
-\NormalTok{Elderly <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{55} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{100}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{),}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)}
-\NormalTok{discrete_age_vec1 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
-\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\KeywordTok{barplot}\NormalTok{(discrete_age_vec1, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
-        \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
-        \DataTypeTok{main=}\StringTok{"Age Distribution with Missing Values"}\NormalTok{,  }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
-        \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
-\CommentTok{# adding all 177 NAs to the Young Adult category}
-\NormalTok{YoungAdult <-}\StringTok{ }\NormalTok{YoungAdult }\OperatorTok{+}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age))}
-\NormalTok{discrete_age_vec2 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
-\KeywordTok{barplot}\NormalTok{(discrete_age_vec2, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
-        \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
-        \DataTypeTok{main=}\StringTok{"Age Distribution with Imputed Averages"}\NormalTok{, }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
-        \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
-
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-35-1.pdf}
-
-Another strategy would be to \textbf{generate random values} given a
+A better strategy would be to \textbf{generate random values} given a
 similar distribution to that which we observed in our traning data, yet
 one problem with this approach is that it overfits the values we
 observe, reinforcing patterns that might not necessarily be
 generalizable.
 
 A final and more sophisticated approach would be to use the rest of the
-information in the training data and \textbf{generate predictions} for
-the ages of those individuals, based on other attributes. Since Decision
-Tree models are easy to use and accept missing values and unscaled
-features and so forth, we can easily generate ages without much hassle
-and modeling work.
+information in the training data and \textbf{predict ages} for those
+individuals, based on other attributes. Since Decision Tree models take
+missing and unscaled values, and work with categorical features, we can
+quickly predict ages with minimal modeling.
 
-First we separate the data into sets with age and without age:
+First we select features for modeling since we have many redundant
+features (such as the logged variables), and separate the data into sets
+with age and without age. These features were chosen after a bit of
+trial and error and plotting of the variable importance score generated
+by the random forest (see below), which allowed me to simplify the model
+by removing attributes that weren't helping the model. In short, the
+model was too complex and therefore there was too much variance.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\StringTok{'%ni%'}\NormalTok{ <-}\StringTok{ }\KeywordTok{Negate}\NormalTok{(}\StringTok{'%in%'}\NormalTok{)}
-\NormalTok{out_vars <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"SurvivedNum"}\NormalTok{,}\StringTok{"FareLog"}\NormalTok{) }\CommentTok{# we do not need these redundant features}
-\NormalTok{yesAge <-}\StringTok{ }\NormalTok{train[}\OperatorTok{!}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age), }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars] }\CommentTok{# 714 rows}
-\NormalTok{noAge <-}\StringTok{ }\NormalTok{train[}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age), }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%ni%}\StringTok{ }\NormalTok{out_vars] }\CommentTok{# 177 rows we're trying to predict}
-\NormalTok{noAge <-}\StringTok{ }\NormalTok{noAge[, }\KeywordTok{colnames}\NormalTok{(noAge) }\OperatorTok{!=}\StringTok{ "Age"}\NormalTok{]}
+\CommentTok{# choose features for modeling}
+\NormalTok{chosen <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Age"}\NormalTok{,}\StringTok{"SurvivedFac"}\NormalTok{,}\StringTok{"PclassFac"}\NormalTok{,}\StringTok{"Title"}\NormalTok{,}\StringTok{"NameLength"}\NormalTok{,}
+            \StringTok{"SiblingSpouse"}\NormalTok{,}\StringTok{"ParentChildren"}\NormalTok{,}\StringTok{"FarePerPerson"}\NormalTok{,}\StringTok{"TicketCount"}\NormalTok{)}
+\NormalTok{yesAge <-}\StringTok{ }\NormalTok{train[}\OperatorTok{!}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age), }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%in%}\StringTok{ }\NormalTok{chosen] }\CommentTok{# with ages <- to train and evaluate models}
+\NormalTok{noAge <-}\StringTok{ }\NormalTok{train[}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age), }\KeywordTok{colnames}\NormalTok{(train) }\OperatorTok{%in%}\StringTok{ }\NormalTok{chosen] }\CommentTok{# without ages <- to predict}
+\CommentTok{# drop the outcome since it only has missing values}
+\NormalTok{noAge}\OperatorTok{$}\NormalTok{Age <-}\StringTok{ }\OtherTok{NULL}
 \end{Highlighting}
 \end{Shaded}
 
@@ -921,16 +796,11 @@ Now we can use the dataset with ages to train a tree model:
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-37-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-23-1.pdf}
 
-According to our single tree, the passenger class and number of parents
-and children are the best predictors for age, followed by title, fare,
-cabin, and port of embarkation, as can be seen in the numerous nodes.
 One problem with this single tree approach is that another random
-starting point would generate an entirely different tree.
-
-Let's first see how this tree did as far as predicting ages in the test
-set:
+starting point would generate an entirely different tree. Let's how this
+single tree did as far as predicting ages in the test set:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -938,24 +808,31 @@ set:
 \NormalTok{y_test <-}\StringTok{ }\NormalTok{yesAge[}\OperatorTok{!}\NormalTok{age_bool, }\StringTok{"Age"}\NormalTok{]}
 \NormalTok{test_RMSE <-}\StringTok{ }\KeywordTok{round}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{mean}\NormalTok{((y_hat }\OperatorTok{-}\StringTok{ }\NormalTok{y_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{)),}\DecValTok{2}\NormalTok{)}
 \KeywordTok{plot}\NormalTok{(y_hat, y_test,}\DataTypeTok{ylab=}\StringTok{"Actual Age"}\NormalTok{,}\DataTypeTok{xlab=}\StringTok{"Predicted Age"}\NormalTok{,}\DataTypeTok{pch=}\DecValTok{19}\NormalTok{,}\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\FloatTok{0.3}\NormalTok{))}
-\KeywordTok{text}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{42}\NormalTok{,}\DecValTok{47}\NormalTok{),}\DecValTok{10}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\StringTok{"RMSE = "}\NormalTok{, test_RMSE))}
+\KeywordTok{text}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{35}\NormalTok{,}\DecValTok{40}\NormalTok{),}\DecValTok{10}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\StringTok{"RMSE = "}\NormalTok{, test_RMSE))}
 \KeywordTok{abline}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{, }\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-38-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-24-1.pdf}
 
-The tree seems to be overpredicting discrete levels of ages such as 30,
-10, and 40, and making lots of errors. Let's see if an ensemble model
-performs better.
+The tree seems to be overpredicting specific ages like 30 and 40 and
+making lots of errors because of this. Let's see if an ensemble model
+like random forest performs better.
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{suppressMessages}\NormalTok{(}\KeywordTok{library}\NormalTok{(randomForest))}
+\CommentTok{# split on outcome}
 \KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
+\NormalTok{Y_age <-}\StringTok{ }\NormalTok{yesAge[, }\StringTok{"Age"}\NormalTok{]}
+\NormalTok{age_bool <-}\StringTok{ }\KeywordTok{sample.split}\NormalTok{(Y_age, }\DataTypeTok{SplitRatio =} \DecValTok{2}\OperatorTok{/}\DecValTok{3}\NormalTok{) }
+\NormalTok{age_train <-}\StringTok{ }\NormalTok{yesAge[age_bool, ]}
+\NormalTok{age_test <-}\StringTok{ }\NormalTok{yesAge[}\OperatorTok{!}\NormalTok{age_bool, }\KeywordTok{colnames}\NormalTok{(yesAge) }\OperatorTok{!=}\StringTok{ "Age"}\NormalTok{]}
+\NormalTok{y_test <-}\StringTok{ }\NormalTok{yesAge[}\OperatorTok{!}\NormalTok{age_bool, }\StringTok{"Age"}\NormalTok{]}
+
 \CommentTok{# checking various RMSEs}
-\NormalTok{rf_RMSEs <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"numeric"}\NormalTok{, }\DataTypeTok{length=}\DecValTok{10}\NormalTok{)}
-\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{10}\NormalTok{) \{}
+\NormalTok{rf_RMSEs <-}\StringTok{ }\KeywordTok{vector}\NormalTok{(}\StringTok{"numeric"}\NormalTok{, }\DataTypeTok{length=}\DecValTok{8}\NormalTok{)}
+\ControlFlowTok{for}\NormalTok{ (i }\ControlFlowTok{in} \DecValTok{1}\OperatorTok{:}\DecValTok{8}\NormalTok{) \{}
 \NormalTok{  rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{age_train, }\DataTypeTok{mtry=}\NormalTok{i, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
 \NormalTok{  rf_yhat <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{age_test)}
 \NormalTok{  rf_RMSEs[i] <-}\StringTok{ }\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{mean}\NormalTok{((rf_yhat }\OperatorTok{-}\StringTok{ }\NormalTok{y_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{,}\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{))}
@@ -965,47 +842,33 @@ performs better.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-39-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-25-1.pdf}
 
-Looks like 4 features gets the job done:
+Looks like the best RMSE is when we use 2 feastures to be randomly
+sampled at each split.
 
 \begin{Shaded}
 \begin{Highlighting}[]
-\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
-\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{age_train, }\DataTypeTok{mtry=}\DecValTok{4}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
+\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{age_train, }\DataTypeTok{mtry=}\DecValTok{2}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
 \NormalTok{rf_yhat <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{age_test)}
 \NormalTok{test_RMSE <-}\StringTok{ }\KeywordTok{round}\NormalTok{(}\KeywordTok{sqrt}\NormalTok{(}\KeywordTok{mean}\NormalTok{((rf_yhat }\OperatorTok{-}\StringTok{ }\NormalTok{y_test)}\OperatorTok{^}\DecValTok{2}\NormalTok{, }\DataTypeTok{na.rm=}\OtherTok{TRUE}\NormalTok{)), }\DecValTok{2}\NormalTok{)}
 \KeywordTok{plot}\NormalTok{(rf_yhat, y_test,}\DataTypeTok{ylab=}\StringTok{"Actual Age"}\NormalTok{,}\DataTypeTok{xlab=}\StringTok{"Predicted Age"}\NormalTok{,}\DataTypeTok{pch=}\DecValTok{19}\NormalTok{,}\DataTypeTok{col=}\KeywordTok{rgb}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{,}\FloatTok{0.5}\NormalTok{))}
-\KeywordTok{text}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{38}\NormalTok{,}\DecValTok{42}\NormalTok{),}\DecValTok{10}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\StringTok{"RMSE = "}\NormalTok{, test_RMSE))}
+\KeywordTok{text}\NormalTok{(}\KeywordTok{c}\NormalTok{(}\DecValTok{38}\NormalTok{,}\DecValTok{45}\NormalTok{),}\DecValTok{10}\NormalTok{, }\KeywordTok{c}\NormalTok{(}\StringTok{"RMSE = "}\NormalTok{, test_RMSE))}
 \KeywordTok{abline}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{1}\NormalTok{, }\DataTypeTok{col=}\StringTok{"red"}\NormalTok{,}\DataTypeTok{lty=}\DecValTok{2}\NormalTok{)}
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-40-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-26-1.pdf}
 
-The root mean squared error is a bit better even though there were many
-missing values in this model.
+The model seems to make lots of mistakes still but predictions seem more
+disperse and the RMSE is basically the same. I believe the random forest
+model will generalize better than a single tree (we might have gotten
+lucky with the RMSE) so I make predictions for the \texttt{noAge} data
+with this last ensemble model, imputing values and comparing the new,
+full \texttt{Age} distribution to our original distribution of ages.
 
-Making predictions on the \texttt{noAge} data, imputing values and
-comparing the new, full \texttt{Age} distribution to our original
-distribution of ages.
-
-\begin{Shaded}
-\begin{Highlighting}[]
-\KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
-\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{yesAge, }\DataTypeTok{mtry=}\DecValTok{4}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
-\NormalTok{noAge}\OperatorTok{$}\NormalTok{Age <-}\StringTok{ }\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{noAge)}
-\KeywordTok{round}\NormalTok{(}\KeywordTok{colMeans}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(noAge))[}\KeywordTok{colSums}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(noAge))}\OperatorTok{>}\DecValTok{0}\NormalTok{]}\OperatorTok{*}\DecValTok{100}\NormalTok{,}\DecValTok{2}\NormalTok{)}
-\end{Highlighting}
-\end{Shaded}
-
-\begin{verbatim}
-## Cabin   Age 
-## 89.27 89.27
-\end{verbatim}
-
-We need to drop \texttt{Cabin} from the features given that the random
-forest model relies on it too much and it has too many missing values.
+For the record, this is how I determined which variables to remove from
+the overly complex first models I built:
 
 \begin{Shaded}
 \begin{Highlighting}[]
@@ -1013,14 +876,12 @@ forest model relies on it too much and it has too many missing values.
 \end{Highlighting}
 \end{Shaded}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-42-1.pdf}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-27-1.pdf}
 
 \begin{Shaded}
 \begin{Highlighting}[]
 \KeywordTok{set.seed}\NormalTok{(}\DecValTok{1}\NormalTok{)}
-\NormalTok{yesAge <-}\StringTok{ }\NormalTok{yesAge[,}\KeywordTok{colnames}\NormalTok{(yesAge) }\OperatorTok{!=}\StringTok{ "Cabin"}\NormalTok{]}
-\NormalTok{noAge <-}\StringTok{ }\NormalTok{noAge[,}\KeywordTok{colnames}\NormalTok{(noAge) }\OperatorTok{!=}\StringTok{ "Cabin"}\NormalTok{]}
-\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{yesAge, }\DataTypeTok{mtry=}\DecValTok{4}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
+\NormalTok{rf_age <-}\StringTok{ }\KeywordTok{randomForest}\NormalTok{(Age }\OperatorTok{~}\NormalTok{., }\DataTypeTok{data=}\NormalTok{yesAge, }\DataTypeTok{mtry=}\DecValTok{2}\NormalTok{, }\DataTypeTok{na.action=}\NormalTok{na.omit)}
 \CommentTok{# imputing Age predictions}
 \NormalTok{train}\OperatorTok{$}\NormalTok{Age[}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age)] <-}\StringTok{ }\KeywordTok{round}\NormalTok{(}\KeywordTok{predict}\NormalTok{(rf_age, }\DataTypeTok{newdata=}\NormalTok{noAge),}\DecValTok{0}\NormalTok{)}
 \KeywordTok{sum}\NormalTok{(}\KeywordTok{is.na}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age)) }\OperatorTok{==}\StringTok{ }\DecValTok{0}
@@ -1034,61 +895,219 @@ forest model relies on it too much and it has too many missing values.
 Confirming we have no missing values in \texttt{Age}, we now plot the
 new distribution of this variable:
 
-\begin{Shaded}
-\begin{Highlighting}[]
-\NormalTok{Child <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{0} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{13}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
-\NormalTok{Teen <-}\StringTok{  }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{12} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{20}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
-\NormalTok{YoungAdult <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{19} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{36}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
-\NormalTok{MiddleAged <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{35} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{56}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
-\NormalTok{Elderly <-}\StringTok{ }\KeywordTok{sum}\NormalTok{(}\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{55} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{100}\NormalTok{,}\DecValTok{1}\NormalTok{,}\DecValTok{0}\NormalTok{))}
-\NormalTok{discrete_age_vec3 <-}\StringTok{ }\KeywordTok{c}\NormalTok{(Child,Teen,YoungAdult,MiddleAged,Elderly)}
-\KeywordTok{par}\NormalTok{(}\DataTypeTok{mfrow=}\KeywordTok{c}\NormalTok{(}\DecValTok{1}\NormalTok{,}\DecValTok{2}\NormalTok{))}
-\CommentTok{# original values}
-\KeywordTok{barplot}\NormalTok{(discrete_age_vec1, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
-        \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
-        \DataTypeTok{main=}\StringTok{"Age Distribution with Missing Values"}\NormalTok{,  }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
-        \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
-\CommentTok{# imputed values}
-\KeywordTok{barplot}\NormalTok{(discrete_age_vec3, }\DataTypeTok{col=}\KeywordTok{terrain.colors}\NormalTok{(}\DecValTok{5}\NormalTok{), }\DataTypeTok{ylim=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{515}\NormalTok{),}
-        \DataTypeTok{cex.names=}\NormalTok{.}\DecValTok{7}\NormalTok{, }\DataTypeTok{cex.main=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{cex.axis=}\FloatTok{0.8}\NormalTok{, }\DataTypeTok{las=}\DecValTok{2}\NormalTok{,}
-        \DataTypeTok{main=}\StringTok{"Age Distribution with Imputed Values"}\NormalTok{,  }\DataTypeTok{space=}\KeywordTok{c}\NormalTok{(}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{,}\DecValTok{0}\NormalTok{),}
-        \DataTypeTok{names.arg=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"Young Adult"}\NormalTok{,}\StringTok{"Middle Aged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
-\end{Highlighting}
-\end{Shaded}
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-29-1.pdf}
 
-\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-44-1.pdf}
+We see that the random forest model performed a more sensible imputation
+than the imputation with medians, as the distribution more closely
+resembles that of the original \texttt{Age} variable.
 
-We see a slight improvement from our previous imputation with averages.
-Treating \texttt{Age} as a numerical variable might have shown a greater
-improvement so we will keep both continuous and ordinal versions.
+\subsection{Age Categories}\label{age-categories}
+
+We can also create an \texttt{AgeFac} variable that bins ages into the
+following groups: \texttt{Child} (\(0-12\)) \texttt{Teen} (\(13-19\)),
+\texttt{YoungAdult} (\(20-35\)), \texttt{MiddleAged} (\(36-55\)), and
+\texttt{Elderly} (\(56-80\)).
 
 \begin{Shaded}
 \begin{Highlighting}[]
+\CommentTok{# create AgeFac for Age Categories}
 \NormalTok{train}\OperatorTok{$}\NormalTok{AgeFac <-}\StringTok{ }\KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{0} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{13}\NormalTok{, }\StringTok{"Child"}\NormalTok{,}
                     \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{12} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{20}\NormalTok{, }\StringTok{"Teen"}\NormalTok{,}
                     \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{19} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{36}\NormalTok{, }\StringTok{"YoungAdult"}\NormalTok{, }
                     \KeywordTok{ifelse}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{>}\StringTok{ }\DecValTok{35} \OperatorTok{&}\StringTok{ }\NormalTok{train}\OperatorTok{$}\NormalTok{Age }\OperatorTok{<}\StringTok{ }\DecValTok{56}\NormalTok{, }\StringTok{"MiddleAged"}\NormalTok{, }\StringTok{"Elderly"}\NormalTok{))))}
-\KeywordTok{str}\NormalTok{(train)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{AgeFac <-}\StringTok{ }\KeywordTok{factor}\NormalTok{(train}\OperatorTok{$}\NormalTok{AgeFac, }\DataTypeTok{levels=}\KeywordTok{c}\NormalTok{(}\StringTok{"Child"}\NormalTok{,}\StringTok{"Teen"}\NormalTok{,}\StringTok{"YoungAdult"}\NormalTok{,}\StringTok{"MiddleAged"}\NormalTok{,}\StringTok{"Elderly"}\NormalTok{))}
+\NormalTok{train}\OperatorTok{$}\NormalTok{AgeNum <-}\StringTok{ }\KeywordTok{as.integer}\NormalTok{(train}\OperatorTok{$}\NormalTok{Age)}
+\NormalTok{train}\OperatorTok{$}\NormalTok{Age <-}\StringTok{ }\OtherTok{NULL}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\subsection{Summary after
+pre-processing}\label{summary-after-pre-processing}
+
+First we reorder a bit the variables.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{new_order <-}\StringTok{ }\KeywordTok{c}\NormalTok{(}\StringTok{"Cabin"}\NormalTok{,}\StringTok{"Embarked"}\NormalTok{,}\StringTok{"PclassNum"}\NormalTok{,}\StringTok{"PclassFac"}\NormalTok{,}\StringTok{"NameLength"}\NormalTok{,}\StringTok{"Title"}\NormalTok{,}\StringTok{"IsMale"}\NormalTok{,}
+               \StringTok{"GenderFac"}\NormalTok{,}\StringTok{"SiblingSpouse"}\NormalTok{,}\StringTok{"ParentChildren"}\NormalTok{,}\StringTok{"NumRelatives"}\NormalTok{,}\StringTok{"TicketCount"}\NormalTok{,}
+               \StringTok{"FarePerPerson"}\NormalTok{,}\StringTok{"FarePerPersonLog"}\NormalTok{,}\StringTok{"AgeNum"}\NormalTok{,}\StringTok{"AgeFac"}\NormalTok{,}\StringTok{"SurvivedNum"}\NormalTok{,}\StringTok{"SurvivedFac"}\NormalTok{)}
+\NormalTok{train <-}\StringTok{ }\NormalTok{train[,new_order]}
+\KeywordTok{head}\NormalTok{(train)}
 \end{Highlighting}
 \end{Shaded}
 
 \begin{verbatim}
-## 'data.frame':    891 obs. of  14 variables:
-##  $ Pclass     : Factor w/ 3 levels "1","2","3": 3 1 3 1 3 3 1 3 3 2 ...
-##  $ Sex        : Factor w/ 2 levels "female","male": 2 1 1 1 2 2 2 2 1 1 ...
-##  $ Age        : num  22 38 26 35 35 41 54 2 27 14 ...
-##  $ SibSp      : Factor w/ 7 levels "0","1","2","3",..: 2 2 1 2 1 1 1 4 1 2 ...
-##  $ Parch      : Factor w/ 7 levels "0","1","2","3",..: 1 1 1 1 1 1 1 2 3 1 ...
-##  $ Fare       : num  7.25 71.28 7.92 53.1 8.05 ...
-##  $ Cabin      : Factor w/ 6 levels "A","B","C","D",..: NA 3 NA 3 NA NA 5 NA NA NA ...
-##  $ Embarked   : Factor w/ 3 levels "C","Q","S": 3 1 3 3 3 2 3 3 3 1 ...
-##  $ SurvivedFac: Factor w/ 2 levels "0","1": 1 2 2 2 1 1 1 1 2 2 ...
-##  $ SurvivedNum: num  0 1 1 1 0 0 0 0 1 1 ...
-##  $ Title      : Factor w/ 5 levels "Miss.","Mr.",..: 2 3 1 3 2 2 2 5 3 3 ...
-##  $ NameLength : num  23 51 22 44 24 16 23 30 49 35 ...
-##  $ FareLog    : num  2.11 4.28 2.19 3.99 2.2 ...
-##  $ AgeFac     : chr  "YoungAdult" "MiddleAged" "YoungAdult" "YoungAdult" ...
+##   Cabin     Embarked PclassNum PclassFac NameLength Title IsMale GenderFac
+## 1  <NA> Southhampton         3 3rd Class         23   Mr.      1      male
+## 2     C    Cherbourg         1 1st Class         51  Mrs.      0    female
+## 3  <NA> Southhampton         3 3rd Class         22 Miss.      0    female
+## 4     C Southhampton         1 1st Class         44  Mrs.      0    female
+## 5  <NA> Southhampton         3 3rd Class         24   Mr.      1      male
+## 6  <NA>   Queensland         3 3rd Class         16   Mr.      1      male
+##   SiblingSpouse ParentChildren NumRelatives TicketCount FarePerPerson
+## 1             1              0            1           1          7.25
+## 2             1              0            1           1         71.28
+## 3             0              0            0           1          7.92
+## 4             1              0            1           2         26.55
+## 5             0              0            0           1          8.05
+## 6             0              0            0           1          8.46
+##   FarePerPersonLog AgeNum     AgeFac SurvivedNum SurvivedFac
+## 1         2.110213     22 YoungAdult           0          no
+## 2         4.280547     38 MiddleAged           1         yes
+## 3         2.188296     26 YoungAdult           1         yes
+## 4         3.316003     35 YoungAdult           1         yes
+## 5         2.202765     35 YoungAdult           0          no
+## 6         2.247072     30 YoungAdult           0          no
 \end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{# Summary after pre-processing}
+\KeywordTok{summary}\NormalTok{(train)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##   Cabin             Embarked     PclassNum         PclassFac  
+##  A   : 15   Cherbourg   :168   Min.   :1.000   1st Class:216  
+##  B   : 47   Queensland  : 77   1st Qu.:2.000   2nd Class:184  
+##  C   : 59   Southhampton:646   Median :3.000   3rd Class:491  
+##  D   : 33                      Mean   :2.309                  
+##  E   : 32                      3rd Qu.:3.000                  
+##  F   : 18                      Max.   :3.000                  
+##  NA's:687                                                     
+##    NameLength           Title         IsMale        GenderFac  
+##  Min.   :12.00   Miss.     :182   Min.   :0.0000   female:314  
+##  1st Qu.:20.00   Mr.       :517   1st Qu.:0.0000   male  :577  
+##  Median :25.00   Mrs.      :125   Median :1.0000               
+##  Mean   :26.97   rareFemale:  6   Mean   :0.6476               
+##  3rd Qu.:30.00   rareMale  : 61   3rd Qu.:1.0000               
+##  Max.   :82.00                    Max.   :1.0000               
+##                                                                
+##  SiblingSpouse ParentChildren  NumRelatives  TicketCount   
+##  0:608         0:678          0      :537   Min.   :1.000  
+##  1:209         1:118          1      :161   1st Qu.:1.000  
+##  2: 28         2: 80          2      :102   Median :1.000  
+##  3: 16         3:  5          3      : 29   Mean   :1.788  
+##  4: 18         4:  4          5      : 22   3rd Qu.:2.000  
+##  5:  5         5:  5          4      : 15   Max.   :7.000  
+##  8:  7         6:  1          (Other): 25                  
+##  FarePerPerson     FarePerPersonLog     AgeNum             AgeFac   
+##  Min.   :  0.000   Min.   :0.000    Min.   : 0.00   Child     : 76  
+##  1st Qu.:  7.765   1st Qu.:2.171    1st Qu.:21.00   Teen      :104  
+##  Median :  8.850   Median :2.287    Median :29.00   YoungAdult:462  
+##  Mean   : 17.789   Mean   :2.600    Mean   :29.68   MiddleAged:210  
+##  3rd Qu.: 24.290   3rd Qu.:3.229    3rd Qu.:37.00   Elderly   : 39  
+##  Max.   :221.780   Max.   :5.406    Max.   :80.00                   
+##                                                                     
+##   SurvivedNum     SurvivedFac
+##  Min.   :0.0000   no :549    
+##  1st Qu.:0.0000   yes:342    
+##  Median :0.0000              
+##  Mean   :0.3838              
+##  3rd Qu.:1.0000              
+##  Max.   :1.0000              
+## 
+\end{verbatim}
+
+Class representation in \texttt{Cabin} is trouble free although there
+are a lot of NAs. Class representation in general is not a problem,
+except perhaps for the rareFemale level in \texttt{Title} which we might
+drop in Part 2 of the project. There are more males than females yet as
+we shall see, females survived a lot more. The distribution of the
+number of relative variables is skewed, as well as
+\texttt{FarePerPerson}. A good 38\% of the people in the training data
+survived, so it should not be hard to predict and we do not need to
+implement SMOTE or other method of balancing classes.
+
+\begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
+
+\section{Univariate Graphical EDA}\label{univariate-graphical-eda}
+
+Now that we have the data in a basic shape for graphical EDA, we can try
+understanding the underlying distributions and associations of this
+training set better, remembering that this is just a sample so our
+findings are not necessarily representative of the population (one hopes
+that the creators of the Titanic competition in Kaggle used proper
+random sampling techniques in splitting their train and test samples).
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\KeywordTok{names}\NormalTok{(train)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+##  [1] "Cabin"            "Embarked"         "PclassNum"       
+##  [4] "PclassFac"        "NameLength"       "Title"           
+##  [7] "IsMale"           "GenderFac"        "SiblingSpouse"   
+## [10] "ParentChildren"   "NumRelatives"     "TicketCount"     
+## [13] "FarePerPerson"    "FarePerPersonLog" "AgeNum"          
+## [16] "AgeFac"           "SurvivedNum"      "SurvivedFac"
+\end{verbatim}
+
+\subsection{Cabin, Embarked}\label{cabin-embarked}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-34-1.pdf}
+
+Most people were in Cabin C and yet the distribution is not too skewed,
+while a vast majority embarked in Southhampton.
+
+\subsection{PclassFac, NameLength}\label{pclassfac-namelength}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-35-1.pdf}
+
+\subsection{Title, GenderFac}\label{title-genderfac}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-36-1.pdf}
+
+As noted, rareFemale is under represented. There is a class imbalance in
+the male and female proportions as well but it is not so sever as to
+warrant any special treatment.
+
+\subsection{SiblingSpouse,
+ParentChildren}\label{siblingspouse-parentchildren}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-37-1.pdf}
+
+The distribution of number of relatives is relatively similar for
+sibling/spouses and parents/children so combining them makes sense, as
+seen below.
+
+\subsection{NumbRelatives, TicketCount}\label{numbrelatives-ticketcount}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-38-1.pdf}
+
+Both \texttt{NumRelatives} and \texttt{TicketCounts} have skewed
+distributions, in linear modeling, if these prove to be interesting
+features, we might still take their log.
+
+\subsection{FarePerPerson,
+FarePerPersonLog}\label{fareperperson-fareperpersonlog}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-39-1.pdf}
+
+The x-axis is shown for the original \texttt{Fare} distribution not the
+logged one, which is scaled up by a multiplication factor which matches
+the range of the original fare for ease of comparison. As seen,
+\texttt{FarePerPersonLog} is a lot less skewed.
+
+\subsection{AgeNum, AgeFac}\label{agenum-agefac}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-40-1.pdf}
+
+Binning the continuous \texttt{Age} variable into discrete groups as we
+did had the effect of centering the distribution, which could be useful
+depending on our modeling strategy.
+
+\subsection{Survived}\label{survived-1}
+
+\includegraphics{Titanic_Survival_files/figure-latex/unnamed-chunk-41-1.pdf}
+
+As noted earlier, the majority did not survive, but class imbalance is
+not a worry.
 
 \begin{center}\rule{0.5\linewidth}{\linethickness}\end{center}
 
