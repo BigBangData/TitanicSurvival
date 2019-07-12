@@ -1,6 +1,10 @@
 ## ----setup, include=FALSE------------------------------------------------
 knitr::opts_chunk$set(echo = TRUE)
 
+## ----include=FALSE-------------------------------------------------------
+#library(knitr)
+#purl("Titanic_Survival.Rmd", output = "survival.R")
+
 ## ----echo=FALSE----------------------------------------------------------
 # Load training set 
 rm(list=ls()) 
@@ -27,7 +31,7 @@ train$PassengerId <- NULL
 ## ------------------------------------------------------------------------
 # Survived
 train$SurvivedFac <- ifelse(train$Survived=="1","yes","no")
-train$SurvivedFac <- factor(train$Survived) 
+train$SurvivedFac <- factor(train$Survived, levels=0:1, labels=c("no","yes"))
 train$SurvivedNum <- as.numeric(train$Survived) 
 train$Survived <- NULL # drop original
 
@@ -247,9 +251,10 @@ train$AgeFac <- ifelse(train$Age > 0 & train$Age < 13, "Child",
                     ifelse(train$Age > 12 & train$Age < 20, "Teen",
                     ifelse(train$Age > 19 & train$Age < 36, "YoungAdult", 
                     ifelse(train$Age > 35 & train$Age < 56, "MiddleAged", "Elderly"))))
-train$AgeFac <- factor(train$AgeFac)
+train$AgeFac <- factor(train$AgeFac, levels=c("Child","Teen","YoungAdult","MiddleAged","Elderly"))
 train$AgeNum <- as.integer(train$Age)
 train$Age <- NULL
+
 
 ## ------------------------------------------------------------------------
 new_order <- c("Cabin","Embarked","PclassNum","PclassFac","NameLength","Title","IsMale",
@@ -290,7 +295,180 @@ barplot(counts, main="Number of Siblings/Spouses vs Parents/Children",
   xlab="Number of Relatives", ylab="", col=c(rgb(0.2,0.4,0,0.3),rgb(0.2,0,0.5,0.3)),
   legend = rownames(counts), beside=TRUE)
 
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+par(mfrow=c(1,2))
+barplot(table(train$NumRelatives), main="Total Number of Relatives",
+  xlab="Number of Relatives", ylab="", col=rgb(0.4,0.1,0.2,0.3))
+
+barplot(table(train$TicketCount), main="Group Tickets",
+  xlab="Number of People per Ticket", ylab="", col=rgb(0,0.1,0.9,0.3))
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+par(mfrow=c(1,1))
+hist(train$FarePerPerson, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
+multiplication_factor <- max(train$FarePerPerson)/max(train$FarePerPersonLog)
+hist(train$FarePerPersonLog*multiplication_factor, col=rgb(0,0,1,0.2), ylab="", add=TRUE)
+legend(150, 450, pch=15, col=c(rgb(1,0,0,0.4),rgb(0,0,1,0.5)), c("Fare","Log(Fare) scaled up"))
+
+## ----fig.height=8, fig.width=9, echo=FALSE-------------------------------
+par(mfrow=c(2,1))
+hist(train$AgeNum, xlab='Age (yrs)', main="Age Distribution", ylab="", col=terrain.colors(8))
+barplot(table(train$AgeFac), xlab='Age Group', ylab="", col=terrain.colors(5), space=c(0,0,0,0,0))
+
+## ----fig.height=4.5, fig.width=4.5, echo=FALSE---------------------------
+par(mfrow=c(1,1))
+# Survived
+plot(train$SurvivedFac, main="Survived", col=c("red","chartreuse3"))
+
 ## ------------------------------------------------------------------------
-library(knitr)
-purl("Titanic_Survival.Rmd", documentation=2)
+names(train)
+
+## ------------------------------------------------------------------------
+# combinations
+head(t(data.frame(combn(12, 2))))
+tail(t(data.frame(combn(12, 2))))
+
+## ----fig.height=6, fig.width=8.5-----------------------------------------
+# Scatterplot matrix
+chosen <- c("SurvivedFac", "PclassNum", "GenderFac","AgeNum","FarePerPerson","Embarked")
+plot(train[,colnames(train) %in% chosen])
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE, message=FALSE, warning=FALSE----
+# 1 Survived & Cabin
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggmosaic))
+train2 <- train[!is.na(train$Cabin),] # copy of train w/o NAs
+Survival2 <- ifelse(train2$SurvivedNum==1,"yes","no") 
+ggplot(data=train2) +
+   geom_mosaic(aes(x=product(Survival2, Cabin),fill=Survival2)) +
+   labs(x='Cabin', y='', title='Tianic Survival by Cabin')
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# 2 Survived & Embarked 
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, Embarked),fill=SurvivedFac )) +
+   labs(x='Port of Embarkation', y='', 
+   title='Tianic Survival by Port of Embarkation')
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+# Survived & Embarked & Fare
+ggplot(data=train) +
+   geom_boxplot(aes(x=Embarked,y=FarePerPerson, fill=SurvivedFac)) +
+   labs(x='Port of Embarkation', y='Fare (Pounds Sterling)', 
+   title='Titanic Survival by Port of Embarkation and Fare')
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+# Survived & Embarked & Fare
+ggplot(data=train) +
+   geom_boxplot(aes(x=Embarked,y=FarePerPersonLog, fill=SurvivedFac)) +
+   labs(x='Port of Embarkation', y='Fare (Log of Pounds Sterling)', 
+   title='Titanic Survival by Port of Embarkation and Fare')
+
+## ----fig.height=4, fig.width=7, echo=FALSE, message=FALSE----------------
+# 3 Survived and Pclass 
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, PclassFac),fill=SurvivedFac)) +
+   labs(x='Passenger Class', y='', title='Titanic Survival by Passenger Class')
+
+## ------------------------------------------------------------------------
+names(train)
+
+## ----fig.height=4.5, fig.width=8, echo=FALSE-----------------------------
+# 4 Survived and NameLength
+plot(train$SurvivedNum~train$NameLength, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Name Length",
+    ylab="Probability of Survival", xlab="Name Length (chars)")
+linmod=lm(SurvivedNum~NameLength,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~NameLength,family='binomial',data=train)
+curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+# 5 Survival and Title
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, Title),fill=SurvivedFac)) + 
+   labs(x='Title', y='',
+   title='Tianic Survival by Title') + 
+   theme(axis.text.x = element_text(angle = 90))
+
+## ----fig.height=4, fig.width=6, echo=FALSE-------------------------------
+# 6 Survived & Gender
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, GenderFac),fill=SurvivedFac)) +
+   labs(x='Sex', y='', title='Titanic Survival by Gender')
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# 7 Survived and Sibling/Spouse
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, SiblingSpouse),fill=SurvivedFac)) +
+   labs(x='Number of Siblings/Spouses', y='', 
+   title='Titanic Survival by Number of Siblings or Spouses')
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# 8 Survived and Parent/Children
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, ParentChildren),fill=SurvivedFac)) +
+   labs(x='Number of Parents/Children', y='', 
+   title='Titanic Survival by Number of Parents or Children')
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# Survived and Number of Relatives
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, NumRelatives),fill=SurvivedFac)) +
+   labs(x='Number of Parents/Children', y='', 
+   title='Titanic Survival by Number of Relatives')
+
+## ----fig.height=5, fig.width=9, echo=FALSE-------------------------------
+# 9 Survived and Ticket Counts
+ticketcounts <- factor(train$TicketCount)
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, ticketcounts),fill=SurvivedFac)) +
+   labs(x='Number of People Per Ticket', y='', 
+   title='Titanic Survival by Size of Groups Per Ticket')
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# 10 Survived & Fare
+plot(train$SurvivedNum~train$FarePerPerson, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Fare",ylab="Probability of Survival", xlab="Fare (Pounds Sterling)")
+linmod=lm(SurvivedNum~FarePerPerson,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~FarePerPerson,family='binomial',data=train)
+curve(predict(g,data.frame(FarePerPerson=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(120,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# 10 Survived & Log(Fare)
+plot(train$SurvivedNum~train$FarePerPersonLog, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Log of Fare",
+    ylab="Probability of Survival", xlab="Fare in Log(Pounds Sterling)")
+linmod=lm(SurvivedNum~FarePerPersonLog,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~FarePerPersonLog,family='binomial',data=train)
+curve(predict(g,data.frame(FarePerPersonLog=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# 11 Survived & Age
+plot(train$SurvivedNum~train$AgeNum, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Age",ylab="Probability of Survival", xlab="Age")
+linmod=lm(SurvivedNum~AgeNum,data=train)
+abline(linmod, col="green", lwd=2, lty=2)
+g=glm(SurvivedNum~AgeNum,family='binomial',data=train)
+curve(predict(g,data.frame(AgeNum=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+
+## ----fig.height=5, fig.width=8.5, echo=FALSE-----------------------------
+# 11 Survived & Age as Factor
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, AgeFac),fill=SurvivedFac)) +
+   labs(x='Age Group', y='', title='Titanic Survival by Age Group')
+
+## ------------------------------------------------------------------------
+# Combinations of 3 or more variables quickly explode
+vars <- 1:12
+for (i in 2:10) {
+	num <- length(combn(vars,i))/i
+	print(paste("There are ", num, "combinations of 12 variables taken", i, "at a time."))
+}
 

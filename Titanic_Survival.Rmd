@@ -9,8 +9,13 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-# Contents
+```{r include=FALSE}
+#library(knitr)
+#purl("Titanic_Survival.Rmd", output = "survival.R")
+```     
 
+# Contents
+ 
 * Summary
 * Preliminary EDA
 * Pre-Processing 1: PassengerId, Survived, Pclass
@@ -659,6 +664,337 @@ plot(train$SurvivedFac, main="Survived", col=c("red","chartreuse3"))
 ```
 
 As noted earlier, the majority did not survive, but class imbalance is not a worry.
+
+
+
+---
+
+
+
+# Bivariate Graphical EDA 
+
+
+Our variables are:
+
+
+```{r}
+names(train)
+```
+
+
+There are six redundant features (`PclassFac`,`GenderFac`,`NumRelatives`,`FarePerPersonLog`,`AgeFac`,`SurvivedFac`) if we choose to eliminate `NumRelatives` and not the two variables it captures, which brings us to twelve features.
+
+
+There are $(n * (n-1)) / 2 = (12 * 11)/2 = 66$ possible bivariate combinations to consider. We can compute bivariate and higher-order combinations with the `combn()` function:
+
+```{r}
+# combinations
+head(t(data.frame(combn(12, 2))))
+tail(t(data.frame(combn(12, 2))))
+```
+
+
+One way to plot several bivariate combinations at once is using a scatterplot matrix. The `plot()` function will do this in R, when passed a **data frame**. Since it is hard to visualize 66 combinations, let's narrow down to a few choice attributes:
+
+
+```{r fig.height=6, fig.width=8.5}
+# Scatterplot matrix
+chosen <- c("SurvivedFac", "PclassNum", "GenderFac","AgeNum","FarePerPerson","Embarked")
+plot(train[,colnames(train) %in% chosen])
+```
+
+
+
+Numerical attributes like `Age` and `Fare` combine well into a scatterplot, yet other attributes are not plotted exactly as we might want. Since the problem space will only increase with higher-dimensional combinations, we select only a few choice pairs to consider. One approach is to compare each of the other eleven features with our `Survived` outcome.
+
+
+## Bivariate Associations with Survival
+
+### 1 Survived & Cabin
+
+Since our data has so many missing values for cabin, our confidence in the results of this plot should be decreased.
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE, message=FALSE, warning=FALSE}
+# 1 Survived & Cabin
+suppressMessages(library(ggplot2))
+suppressMessages(library(ggmosaic))
+train2 <- train[!is.na(train$Cabin),] # copy of train w/o NAs
+Survival2 <- ifelse(train2$SurvivedNum==1,"yes","no") 
+ggplot(data=train2) +
+   geom_mosaic(aes(x=product(Survival2, Cabin),fill=Survival2)) +
+   labs(x='Cabin', y='', title='Tianic Survival by Cabin')
+```
+
+
+It would appear that perhaps cabin is not as associated with survivability as we had hoped for, given that A cabins are on the deck and F cabins near the keel where the ship hit the iceberg.
+
+
+
+### 2 Survived & Embarked 
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 2 Survived & Embarked 
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, Embarked),fill=SurvivedFac )) +
+   labs(x='Port of Embarkation', y='', 
+   title='Tianic Survival by Port of Embarkation')
+```
+
+There seems to be some evidence that having embarked in Southhampton is an indicator of higher probability of survival. 
+
+We can explore port of embarkation in a more nuanced manner by considering the fares paid at each port, and whether survivability appears to me more associated with the fare or the port embarked. We use the log of fares since it would be hard to observe any differences in the boxplots given the highly skewed distribution of fare.
+
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+# Survived & Embarked & Fare
+ggplot(data=train) +
+   geom_boxplot(aes(x=Embarked,y=FarePerPerson, fill=SurvivedFac)) +
+   labs(x='Port of Embarkation', y='Fare (Pounds Sterling)', 
+   title='Titanic Survival by Port of Embarkation and Fare')
+```
+
+
+Curiously, Southhampton's higher survivability (as shown in the previous plot) is not entirely associated with fare, since Cherbourg has higher fare distributions. It is also curious that some high outliers did not survive in both ports. We could drill-down to see whether they were men and so forth, but these details are unlikely to generalize into helpful insights for machine-learning models. It might be helpful to see this distribution with the log of fare to gain insights into Queensland's distribution.
+
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+# Survived & Embarked & Fare
+ggplot(data=train) +
+   geom_boxplot(aes(x=Embarked,y=FarePerPersonLog, fill=SurvivedFac)) +
+   labs(x='Port of Embarkation', y='Fare (Log of Pounds Sterling)', 
+   title='Titanic Survival by Port of Embarkation and Fare')
+```
+
+Curiously, the differences between survival and no survival in the Queensland sample are not to be found in fares.
+
+
+### 3 Survived & Pclass
+
+
+```{r fig.height=4, fig.width=7, echo=FALSE, message=FALSE}
+# 3 Survived and Pclass 
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, PclassFac),fill=SurvivedFac)) +
+   labs(x='Passenger Class', y='', title='Titanic Survival by Passenger Class')
+```
+
+
+
+Not surprisingly, passenger's class was taken into account when getting the the life boats, so people in third class took the brunt of it, and first class folks had it best. What the mosaic plot also shows is the proportions of these classes in our sample, which we hope are somewhat generalizable.
+
+```{r}
+names(train)
+```
+
+
+### 4 Survived and Name Length
+
+
+```{r fig.height=4.5, fig.width=8, echo=FALSE}
+# 4 Survived and NameLength
+plot(train$SurvivedNum~train$NameLength, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Name Length",
+    ylab="Probability of Survival", xlab="Name Length (chars)")
+linmod=lm(SurvivedNum~NameLength,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~NameLength,family='binomial',data=train)
+curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+Longer names appear to have some association with higher probabilities of survival so we keep this feature. It might just be capturing the association of longer names and wealth, but since in machine learning we do not care about multicollinearity issues, we will test whether to keep this attribute or not during our feature selection modeling phase. The linear fit capture most of the distribution, only failing on a couple outlying cases.
+
+
+
+### 5 Survived and Title
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+# 5 Survival and Title
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, Title),fill=SurvivedFac)) + 
+   labs(x='Title', y='',
+   title='Tianic Survival by Title') + 
+   theme(axis.text.x = element_text(angle = 90))
+```
+
+
+Title can be seen as a proxy for gender and as we've seen, females survived a lot better than males. It is worth keeping this attribute as it shows some granularity in what kinds of folks survived better within gender groups, i.e. those with rare titles.
+
+
+### 6 Survived and Gender
+
+
+```{r fig.height=4, fig.width=6, echo=FALSE}
+# 6 Survived & Gender
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, GenderFac),fill=SurvivedFac)) +
+   labs(x='Sex', y='', title='Titanic Survival by Gender')
+```
+
+Females were much more likely to survive, and most of the passengers were male.
+
+
+### 7 Survived and Sibling/Spouse
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 7 Survived and Sibling/Spouse
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, SiblingSpouse),fill=SurvivedFac)) +
+   labs(x='Number of Siblings/Spouses', y='', 
+   title='Titanic Survival by Number of Siblings or Spouses')
+```
+
+Having one sibling or spouse is most indicative of survival, followed by two, then none, then four and up. The probability of survival is low for higher numbers but our confidence that this is the case should decrease because there is gradually less evidence for this effect, given the smaller sample sizes.
+
+
+### 8 Survived and Parent/Children
+
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 8 Survived and Parent/Children
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, ParentChildren),fill=SurvivedFac)) +
+   labs(x='Number of Parents/Children', y='', 
+   title='Titanic Survival by Number of Parents or Children')
+```
+
+Similar results to those observed in the previous plot are seen, except for the higher probability of survival for someone with 3 (presumably) children, yet again, since the sample sizes are small, we should not take this finding too seriously.
+
+Let's look at survival with the composite "Number of Relatives" attribute:
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# Survived and Number of Relatives
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, NumRelatives),fill=SurvivedFac)) +
+   labs(x='Number of Parents/Children', y='', 
+   title='Titanic Survival by Number of Relatives')
+```
+
+
+It would seem as though survivability increases from 0 to 3 relatives then suddenly besomes worse, a curious and possibly suspect insight we might consider during **feature engineering** for machine learning.
+
+
+
+### 9 Survived and Ticket Counts
+
+Before plotting, a hypothesis could be formed that higher groups would have higher survival rates, since people could band together, yet one hole in this hypothesis is that perhaps it is unlikely that men would survive more in groups.
+
+
+```{r fig.height=5, fig.width=9, echo=FALSE}
+# 9 Survived and Ticket Counts
+ticketcounts <- factor(train$TicketCount)
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, ticketcounts),fill=SurvivedFac)) +
+   labs(x='Number of People Per Ticket', y='', 
+   title='Titanic Survival by Size of Groups Per Ticket')
+```
+
+
+The plot shows how how groups of 3 survived best, followed by 2, 4, 1, and other groups are perhaps too unrepresented for a solid interpretation. It is worth exploring in multivariate EDA whether men survived more in groups or alone, or children, and of what classes.
+
+
+
+### 10 Survived and Fare Per Person
+
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 10 Survived & Fare
+plot(train$SurvivedNum~train$FarePerPerson, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Fare",ylab="Probability of Survival", xlab="Fare (Pounds Sterling)")
+linmod=lm(SurvivedNum~FarePerPerson,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~FarePerPerson,family='binomial',data=train)
+curve(predict(g,data.frame(FarePerPerson=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(120,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+
+Unlike the plot of Survival by Age below, we observe extreme probabilities given the skewed distribution of fares, which demonstrate how survival is increasingly more probable the higher the fare. Since the linear model is not a good approximation, we can explore the logged fares which could be used in a multivariate linear model. The fit is much better as evidenced by the plot below.
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 10 Survived & Log(Fare)
+plot(train$SurvivedNum~train$FarePerPersonLog, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Log of Fare",
+    ylab="Probability of Survival", xlab="Fare in Log(Pounds Sterling)")
+linmod=lm(SurvivedNum~FarePerPersonLog,data=train)
+abline(linmod, col="green", lwd=1, lty=2)
+g=glm(SurvivedNum~FarePerPersonLog,family='binomial',data=train)
+curve(predict(g,data.frame(FarePerPersonLog=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+
+
+
+
+### 11 Survived and Age
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 11 Survived & Age
+plot(train$SurvivedNum~train$AgeNum, pch=19, col=rgb(0,0,.6,.2),
+    main="Titanic Survival by Age",ylab="Probability of Survival", xlab="Age")
+linmod=lm(SurvivedNum~AgeNum,data=train)
+abline(linmod, col="green", lwd=2, lty=2)
+g=glm(SurvivedNum~AgeNum,family='binomial',data=train)
+curve(predict(g,data.frame(AgeNum=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
+legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+```
+
+
+
+The probability of survival declines with age, and since the probabilities observed are not extreme (survival was not rare and the distribution of age is near normal) the linear fit almost coincides with the logistic (sinusoidal) fit. Another way to visualize this is to plot the two categorical versions of these two same variables.
+
+
+```{r fig.height=5, fig.width=8.5, echo=FALSE}
+# 11 Survived & Age as Factor
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(SurvivedFac, AgeFac),fill=SurvivedFac)) +
+   labs(x='Age Group', y='', title='Titanic Survival by Age Group')
+```
+
+
+
+
+# Multivariate Graphical EDA
+
+The higher-dimensional problem space of combinations with 11 variables is as follows:
+
+```{r}
+# Combinations of 3 or more variables quickly explode
+vars <- 1:12
+for (i in 2:10) {
+	num <- length(combn(vars,i))/i
+	print(paste("There are ", num, "combinations of 12 variables taken", i, "at a time."))
+}
+```
+
+The number of combinations is complementary (adding up to 12), so when considering combinations of 10 variables, we are just considering the complement of 2 variables, and so forth.
+
+There are clearly too many trivariate combinations to consider even if we stick with those that interact with `Survival`, so we stick with just a few hunches and questions we might have about the data.
+
+We noted earlier that it would be interesting to explore whether men survived more in groups or alone, and whether children of wealthier classes survived more than children of poorer classes, or whether men of higher classes survived worse (or better?) than children in poorer classes, and so forth.
+
+## Are single men better at saving themselves? 
+
+Or conversely, do family men lose their seats at a life boat saving their families?
+
+
+## How does class and age relate to survivability?
+
+Do children in third class survive worse than adults in first class?
+
+
+
+
+# Conclusion
+
+
+
 
 
 
