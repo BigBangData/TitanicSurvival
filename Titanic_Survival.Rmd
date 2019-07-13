@@ -984,10 +984,46 @@ We noted earlier that it would be interesting to explore whether men survived mo
 Or conversely, do family men lose their seats at a life boat saving their families?
 
 
+```{r}
+names(train)
+```
+
+```{r}
+# creating IsSingle variable
+train$IsSingle <- ifelse(train$NumRelatives==0,1,0)
+train$IsSingle <- factor(train$IsSingle, levels=0:1, labels=c("Not Single","Single"))
+```
+
+I like seeing proportions...
+
+```{r fig.height=5, fig.width=9}
+ggplot(data=train) +
+   geom_mosaic(aes(x=product(GenderFac, IsSingle),fill=SurvivedFac)) +
+   labs(x='', y='', 
+   title='Titanic Survival by ')
+```
+
+
+```{r fig.height=5, fig.width=9}
+ggplot(data=train) +
+   geom_bar(aes(x=SurvivedFac,y=IsMale,fill=AgeFac), stat="identity") +
+   facet_wrap(aes(IsSingle))+
+           coord_flip() +
+   labs(x='Survived', y='Count', 
+   title='Titanic Survival of Males by Age and Single Status')
+```
+
+
+
 ## How does class and age relate to survivability?
 
 Do children in third class survive worse than adults in first class?
 
+```{r}
+
+
+
+```
 
 
 
