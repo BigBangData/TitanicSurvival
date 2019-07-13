@@ -295,6 +295,7 @@ temp_dfm[1:10,]
 ```
 
 
+
 We can now drop `Fare`, `Name`, and `Ticket`, but we can keep the ticket counts as its own attribute `TicketCount`:
 
 ```{r}
@@ -981,12 +982,11 @@ We noted earlier that it would be interesting to explore whether men survived mo
 
 ## Are single men better at saving themselves? 
 
-Or conversely, do family men lose their seats at a life boat saving their families?
+We informally hypothesize that family men might lose their place at a lifeboat more by prioritizing their families, while single men have less incentive to save women and children. We can do some quick plots to see whether the data seems to confirm this. 
 
+It is good to visualize proportions of subsamples to check whether any subgroups are underrepresented and notice how the subgroups relate to each other.
 
-```{r}
-names(train)
-```
+I've created an `IsSingle` variable just for this purpose, which assumes that if a person had zero relatives they were "single", or alone, at least in the Titanic voyage.
 
 ```{r}
 # creating IsSingle variable
@@ -994,14 +994,19 @@ train$IsSingle <- ifelse(train$NumRelatives==0,1,0)
 train$IsSingle <- factor(train$IsSingle, levels=0:1, labels=c("Not Single","Single"))
 ```
 
-I like seeing proportions...
+
 
 ```{r fig.height=5, fig.width=9}
 ggplot(data=train) +
    geom_mosaic(aes(x=product(GenderFac, IsSingle),fill=SurvivedFac)) +
-   labs(x='', y='', 
-   title='Titanic Survival by ')
+   labs(x='Single or Not, Survived or Not', y='Gender', 
+   title='Titanic Survival by Gender and Single Status')
 ```
+
+
+This mosaic plot shows how the majority were alone but within that majority, a vast majority were male, and within that specific subgroup (male, single), the greatest majority died, so our hypothesis is not sounding that great, it would see as though being a single male was not a good indicator of survivability. It is a bit hard to compare the proportions of only males, and a confounding factor is `Age` so we can get a fuller picture by plotting only the male population as far as their age, single status and survivability.
+
+
 
 
 ```{r fig.height=5, fig.width=9}
@@ -1010,25 +1015,56 @@ ggplot(data=train) +
    facet_wrap(aes(IsSingle))+
            coord_flip() +
    labs(x='Survived', y='Count', 
-   title='Titanic Survival of Males by Age and Single Status')
+   title='Titanic Survival of Men by Age and Single Status')
 ```
 
+
+The vast majority of children were not alone, and of the great number of single males that did not survive, there were quite a number of elderly (the majority of that age group) men. We now wonder how women survived as far as age groups and single status.
+
+
+
+```{r fig.height=5, fig.width=9}
+# Women by Age and Single Status
+ggplot(data=train) +
+   geom_bar(aes(x=SurvivedFac,y=-(IsMale-1),fill=AgeFac), stat="identity") +
+   facet_wrap(aes(IsSingle))+
+           coord_flip() +
+   labs(x='Survived', y='Count', 
+   title='Titanic Survival of Women by Age and Single Status')
+```
+
+Noticing that the subgroups are more uniform (highest count is about 160, not 350), we also notice a large number (proportionately) of girls that did not survive, yet elderly women seem to fare better than elderly men. Curiously, the theory that single men survive better might apply for women, as women that were alone seem to survive more (proportionately) than women who were not alone.
+
+I got curious and wanted to see who were these children with no relatives in the Titanic:
+
+```{r}
+chosen <- c("PclassFac","GenderFac","NumRelatives","TicketCount","AgeNum","SurvivedFac")
+train[,colnames(train) %in% chosen][train$AgeFac=="Child" & train$NumRelatives == 0,]
+```
+
+
+In our training sample there are just two seemingly unaccompanied children, both in 3rd Class: a 5-year old girl who survived and an 11-year old boy who did not. They appear to have no relatives yet the ticket count is 2. An assumption could be made that this was some kind of error and these children were accompanied by family. 
+
+Pursuing the ticket number one finds that the 11-yr old boy who died was indeed alone, accompanied by a 26-yr old young adult who survived, and the 5-yr old girl was accompanied by her nursemaid (both survived). Pursuing ticket numbers and stories does not scale well, it exemplifies how assumptions are often flawed.
 
 
 ## How does class and age relate to survivability?
 
 Do children in third class survive worse than adults in first class?
 
-```{r}
-
-
+```{r fig.height=5, fig.width=9}
+# Survival by Age and Class
+ggplot(data=train) +
+   geom_bar(aes(x=SurvivedFac,y=PclassFac, fill=AgeFac), stat="identity") +
+   facet_wrap(aes(PclassFac))+
+   labs(x='Survived', y='Count', 
+   title='Titanic Survival by Age and Passenger Class')
 
 ```
 
 
 
-# Conclusion
-
+[FIX: not a great plot, use percentages, isolate age groups]
 
 
 
