@@ -1,8 +1,8 @@
 ---
 title: "Titanic Survival Part 1: EDA in R"
 author: "Marcelo Sanches"
-date: "July 4, 2019"
-output: pdf_document
+date: "July 14, 2019"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -31,11 +31,34 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Summary {#summary-link}
 
+## Goals
+
+1. Participate in the [Titanic Kaggle Machine-Learning Competition](https://www.kaggle.com/c/titanic);
+2. Perform **Exploratory Data Analysis** and **Data Visualizations** in R;
+3. Create **Reproducible Reports** in PDF and HTML formats, weaving code and comments using **RStudio** and **knitr**;
+4. Predict survival in the Titanic, evaluating various machine-learning algorithms using **Python**;
+5. Emulate **production-ready code**, treating the test set as "future data";
+6. Clean, model, and predict using a **single pipeline approach** using **Jupyter Notebook**.
+
 ## Motivation
 
-The **Titanic Survival Project** was born out of my desire not only to participate in a Kaggle competition but also do avoid the common mistake of overfitting the test set by submitting various predictions. In a realistic production environment, the test set would be future data that we would run a single prediction on, not a playground for getting better at prediction outcomes of that particular set of data. 
+This project is my response to Exercise 3 at the end of Chapter 3 of Aurelien Geron's book 
+[Hands-On Machine Learning with Scikit-Learn and TensorFlow](https://github.com/ageron/handson-ml). I wanted to use **R** and **Python** and play to their strengths: R for **data exploration and visualization**, and Python for **machine-learning pipelines** and **production-level code**. 
 
-I also wanted to use **R** and **Python** and play to their strengths: R for **data exploration** and **quick visualizations**, and Python for **machine-learning pipelines** and **production code**. 
+The Titanic competition is well described in the Kaggle link above. The TL;DR version is that we are trying to predict who survived on a test set we never look at, and the performance measure we are using is called *accuracy*, which is the number of times we predict the correct outcome (survived, or not) over all the cases. 
+
+*	Accuracy and Classification
+
+There are many measures of performance that could be chosen for classification problems (problems in which the outcome is a category or class, not a numerical output). Accuracy is perhaps the simplest one, but a data analyst needs to choose a metric with care, given a problem. PR (precision-recall) curves and ROC graphs (true positive rate vs. false positive rate) are often more informative in business settings where one has to weigh cost benefits of various potential implementations of a machine-learning solution. All of these measures stem from different ways to partition and look at a [confusion matrix](https://en.wikipedia.org/wiki/Confusion_matrix). 
+
+Since Kaggle competitions aren't necessarily about helping a business with a given problem that warrants a machine-learning solution, we are less interested in "when to stop" or "what accuracy is good enough" or "should we consider another metric" or "gather more data" but rather to use the train set given to us and predict values on the test set over, and over, again. This overfits the test set. We might be able to predict values on the test set perfectly, yet our machine-learning algorithm might not generalize to new values. 
+
+* Making sense of the Titanic Competition
+
+Since we can look up who survived in the Titanic, predicting these outcomes makes no sense. What we are really doing is learning how to build classifiers using machine learning. Ideally, these classifiers would generalize, but it also makes little sense to generalize since there isn't a need to predict future cases of Titanic disasters. There is also no cost-benefit analysis or ethical considerations that would inform and constrain or direct our efforts. In short, the Titanic competition is just a pure drive for accuracy, and for this reason we see many perfect scores and overfit test sets in Kaggle.
+
+My approach will be to use this introductory competition to understand the data, and emulate a production environment with pipelines in Python that clean, model, and predict on the test set in a robust, generalizable manner.
+
 
 ## Project Parts
 
@@ -45,16 +68,20 @@ In **Part 2** of the project I perform all the necessary pre-processing steps fo
 
 ## Part 1 Sections
 
-In the **Contents** we can see how **Part 1** is divided into several sections. After a **preliminary EDA** we spend most of our time **pre-processing** the data, as usual, and then spend a fair amount of time exploring it through **visualizations**. I tried to organize this exploration into **univariate, bivariate,** and **multivariate** sub-sections, fully aware that the number of possible combinations quickly explodes even with a few attributes, so this exploration is still mostly ad hoc.
+**Part 1** is divided into several sections (see **Contents** above). After a **preliminary EDA** I spend most of the time **pre-processing** the data and a fair amount of time exploring it through **visualizations**. I organized this exploration into **univariate, bivariate,** and **multivariate** sub-sections.
+
+
+* **NB**: I removed all the `echo=FALSE` arguments from the code bits since I decided that I prefer seeing the code next to a plot instead of flipping back and forth to a Code Appendix to figure out which code spit out which plot. No matter how well documented, this "flipping-pages" practice (i.e. endnotes vs. footnotes) seems inefficient.
 
 
 ---
+
 
 # Preliminary EDA {#prelimEDA-link}
 
 First we load the training data and look at its structure, summary, top and bottom rows. We will not look at the test data until it is time to test; failing to do so would consist in *data snooping*. In the spirit of the Titanic Kaggle kernel, I added the Kaggle Titanic datasets a level up on an `input/` directory. 
 
-```{r echo=FALSE}
+```{r}
 # Load training set 
 rm(list=ls()) 
 train <- read.csv("../input/train.csv", na.strings="")
@@ -106,10 +133,10 @@ tail(train)
 
 ## PassengerId
 
-`PassengerId` is just an index. Since R keeps a row index and we shouldn't use this variable for modeling as it provides no information, we drop it, but first check that is has no duplicates and has stepwise values to ensure data integrity (see "trust but verify" code chunk in the Appendix).
+`PassengerId` is just an index. Since R keeps a row index and we shouldn't use this variable for modeling as it provides no information, we drop it, but first check that is has no duplicates and has stepwise values to ensure data integrity.
 
 
-```{r include=FALSE}
+```{r}
 # PassengerId: Trust but Verify
 sum(duplicated(train$PassengerId)) == 0 # no duplicates
 sum(train$PassengerId == 1:891) == 891 # stepwise values
@@ -189,11 +216,11 @@ train$Title <- factor(train$Title)
 unique(train$Title)
 ```
 
-Before dropping name entirely, we can informally test a common assumption that the length of a name is associated positively with higher socio-economic status and therefore survivability. (See Appendix for the `NameLength` code.)
+Before dropping name entirely, we can informally test a common assumption that the length of a name is associated positively with higher socio-economic status and therefore survivability.
 
 ## NameLength
 
-```{r echo=FALSE}
+```{r}
 # create NameLength attribute
 train$NameLength <- vector("numeric", nrow(train))
 for (i in 1:nrow(train)) {
@@ -297,7 +324,8 @@ We can now drop `Fare`, `Name`, and `Ticket`, but we can keep the ticket counts 
 
 ```{r}
 # create TicketCount
-train$TicketCount <- apply(X=train, MARGIN=1, FUN=function(dfm) counts[which(counts[,1] == dfm["Ticket"]), 2])
+train$TicketCount <- apply(X=train, MARGIN=1, 
+                          FUN=function(dfm) counts[which(counts[,1] == dfm["Ticket"]), 2])
 # drop Fare, Name, and Ticket
 '%ni%' <- Negate('%in%')
 not_chosen <- c("Fare","Name","Ticket")
@@ -328,7 +356,7 @@ names(train)
 `Cabin` has 687 NAs and 147 levels yet cabin locations might be important in determining survivability, since the accident happened late at night when people were mostly in their cabins, and lower-letter cabins were near the deck while higher-letter cabins were near the keel where the ship hit the iceberg.
 
 
-```{r echo=FALSE}
+```{r}
 # Cleaning up Cabin
 train$CabinClean <- vector("character", nrow(train))
 for (i in 1:nrow(train)) {
@@ -376,7 +404,7 @@ The `Age` variable had to be considered at the end of pre-processing since we wi
 
 It is helpful to visualize the distribution of ages before and after a certain imputing strategy to see the effect it has on the data. The common practice of imputing with measures of center such as the mean or the median (in our case there wouldn't be much of a difference as the distribution is approximately normal) distorts the distribution. To show this effectively, the y axes must agree:
 
-```{r fig.height=4.5, fig.width=9, echo=FALSE}
+```{r fig.height=4.5, fig.width=9}
 par(mfrow=c(1,2))
 hist(train$Age, xlab='Age', main="Before Imputation", ylab="", 
      col=rgb(0,0.4,0.4,0.4), ylim=c(0,420))
@@ -475,6 +503,7 @@ abline(0,1, col="red",lty=2)
 
 
 The model seems to make lots of mistakes still but predictions seem more disperse and the RMSE is basically the same. 
+
 I believe the random forest model will generalize better than a single tree (we might have gotten lucky with the RMSE) so I make predictions for the `noAge` data with this last ensemble model, imputing values and comparing the new, full `Age` distribution to our original distribution of ages.
 
 
@@ -495,7 +524,7 @@ sum(is.na(train$Age)) == 0
 
 Confirming we have no missing values in `Age`, we now plot the new distribution of this variable:
 
-```{r fig.height=4.5, fig.width=9, echo=FALSE}
+```{r fig.height=4.5, fig.width=9}
 par(mfrow=c(1,2))
 hist(train$Age, xlab='Age', main="After Random Forest Imputation", ylab="", 
      col=rgb(0,0.4,0.4,0.4), ylim=c(0,420))
@@ -565,7 +594,7 @@ names(train)
 
 ## Cabin, Embarked
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 par(mfrow=c(1,2)); par(oma=c(3,1,1,1))
 plot(train$Cabin, main="Cabin", col=terrain.colors(6))
 plot(train$Embarked, main="Port Embarked", col=terrain.colors(3), cex.axis=0.8, cex.sub=0.8, las=2)
@@ -577,7 +606,7 @@ Most people were in Cabin C and yet the distribution is not too skewed, while a 
 
 ## PclassFac, NameLength
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 par(mfrow=c(1,2)); par(oma=c(3,1,1,1))
 plot(train$PclassFac, main="Pclass Categorical", col=terrain.colors(3),cex.axis=0.8, las=2)
 hist(train$NameLength, main="Name Lengths", xlab="Length (characters)", col="steelblue")
@@ -585,7 +614,7 @@ hist(train$NameLength, main="Name Lengths", xlab="Length (characters)", col="ste
 
 ## Title, GenderFac
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 par(mfrow=c(1,2)); par(oma=c(3,1,1,1))
 plot(train$Title, main="Titles", col=terrain.colors(5),cex.axis=0.8, las=2)
 plot(train$GenderFac, main="Sex", col=c("palevioletred1","cadetblue2"))
@@ -596,7 +625,7 @@ As noted, rareFemale is under represented. There is a class imbalance in the mal
 
 ## SiblingSpouse, ParentChildren
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 SS <- table(train$SiblingSpouse)
 PC <- table(train$ParentChildren)
 counts <- rbind(SS,PC)
@@ -613,7 +642,7 @@ The distribution of number of relatives is relatively similar for sibling/spouse
 ## NumRelatives, TicketCount
 
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 par(mfrow=c(1,2))
 barplot(table(train$NumRelatives), main="Total Number of Relatives",
   xlab="Number of Relatives", ylab="", col=rgb(0.4,0.1,0.2,0.3))
@@ -629,7 +658,7 @@ Both `NumRelatives` and `TicketCounts` have skewed distributions, in linear mode
 ## FarePerPerson, FarePerPersonLog
 
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 par(mfrow=c(1,1))
 hist(train$FarePerPerson, xlab="Fare (Pounds Sterling)", ylab="", main="Fares", col=rgb(1,0,0,0.3))
 multiplication_factor <- max(train$FarePerPerson)/max(train$FarePerPersonLog)
@@ -643,7 +672,7 @@ The x-axis is shown for the original `Fare` distribution not the logged one, whi
 
 ## AgeNum, AgeFac
 
-```{r fig.height=8, fig.width=9, echo=FALSE}
+```{r fig.height=8, fig.width=9}
 par(mfrow=c(2,1))
 hist(train$AgeNum, xlab='Age (yrs)', main="Age Distribution", ylab="", col=terrain.colors(8))
 barplot(table(train$AgeFac), xlab='Age Group', ylab="", col=terrain.colors(5), space=c(0,0,0,0,0))
@@ -655,7 +684,7 @@ Binning the continuous `Age` variable into discrete groups as we did had the eff
 ## Survived
 
 
-```{r fig.height=4.5, fig.width=4.5, echo=FALSE}
+```{r fig.height=4.5, fig.width=4.5}
 par(mfrow=c(1,1))
 # Survived
 plot(train$SurvivedFac, main="Survived", col=c("red","chartreuse3"))
@@ -712,7 +741,7 @@ Numerical attributes like `Age` and `Fare` combine well into a scatterplot, yet 
 
 Since our data has so many missing values for cabin, our confidence in the results of this plot should be decreased.
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE, message=FALSE, warning=FALSE}
+```{r fig.height=5, fig.width=8.5, message=FALSE, warning=FALSE}
 # 1 Survived & Cabin
 suppressMessages(library(ggplot2))
 suppressMessages(library(ggmosaic))
@@ -730,7 +759,7 @@ It would appear that perhaps cabin is not as associated with survivability as we
 
 ### 2 Survived & Embarked 
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # 2 Survived & Embarked 
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, Embarked),fill=SurvivedFac )) +
@@ -743,7 +772,7 @@ There seems to be some evidence that having embarked in Southhampton is an indic
 We can explore port of embarkation in a more nuanced manner by considering the fares paid at each port, and whether survivability appears to me more associated with the fare or the port embarked. We use the log of fares since it would be hard to observe any differences in the boxplots given the highly skewed distribution of fare.
 
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 # Survived & Embarked & Fare
 ggplot(data=train) +
    geom_boxplot(aes(x=Embarked,y=FarePerPerson, fill=SurvivedFac)) +
@@ -755,7 +784,7 @@ ggplot(data=train) +
 Curiously, Southhampton's higher survivability (as shown in the previous plot) is not entirely associated with fare, since Cherbourg has higher fare distributions. It is also curious that some high outliers did not survive in both ports. We could drill-down to see whether they were men and so forth, but these details are unlikely to generalize into helpful insights for machine-learning models. It might be helpful to see this distribution with the log of fare to gain insights into Queensland's distribution.
 
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 # Survived & Embarked & Fare
 ggplot(data=train) +
    geom_boxplot(aes(x=Embarked,y=FarePerPersonLog, fill=SurvivedFac)) +
@@ -769,7 +798,7 @@ Curiously, the differences between survival and no survival in the Queensland sa
 ### 3 Survived & Pclass
 
 
-```{r fig.height=4, fig.width=7, echo=FALSE, message=FALSE}
+```{r fig.height=4, fig.width=7, message=FALSE}
 # 3 Survived and Pclass 
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, PclassFac),fill=SurvivedFac)) +
@@ -788,7 +817,7 @@ names(train)
 ### 4 Survived and Name Length
 
 
-```{r fig.height=4.5, fig.width=8, echo=FALSE}
+```{r fig.height=4.5, fig.width=8}
 # 4 Survived and NameLength
 plot(train$SurvivedNum~train$NameLength, pch=19, col=rgb(0,0,.6,.2),
     main="Titanic Survival by Name Length",
@@ -806,7 +835,7 @@ Longer names appear to have some association with higher probabilities of surviv
 
 ### 5 Survived and Title
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 # 5 Survival and Title
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, Title),fill=SurvivedFac)) + 
@@ -822,7 +851,7 @@ Title can be seen as a proxy for gender and as we've seen, females survived a lo
 ### 6 Survived and Gender
 
 
-```{r fig.height=4, fig.width=6, echo=FALSE}
+```{r fig.height=4, fig.width=6}
 # 6 Survived & Gender
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, GenderFac),fill=SurvivedFac)) +
@@ -834,7 +863,7 @@ Females were much more likely to survive, and most of the passengers were male.
 
 ### 7 Survived and Sibling/Spouse
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # 7 Survived and Sibling/Spouse
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, SiblingSpouse),fill=SurvivedFac)) +
@@ -849,7 +878,7 @@ Having one sibling or spouse is most indicative of survival, followed by two, th
 
 
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # 8 Survived and Parent/Children
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, ParentChildren),fill=SurvivedFac)) +
@@ -862,7 +891,7 @@ Similar results to those observed in the previous plot are seen, except for the 
 Let's look at survival with the composite "Number of Relatives" attribute:
 
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # Survived and Number of Relatives
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, NumRelatives),fill=SurvivedFac)) +
@@ -880,7 +909,7 @@ It would seem as though survivability increases from 0 to 3 relatives then sudde
 Before plotting, a hypothesis could be formed that higher groups would have higher survival rates, since people could band together, yet one hole in this hypothesis is that perhaps it is unlikely that men would survive more in groups.
 
 
-```{r fig.height=5, fig.width=9, echo=FALSE}
+```{r fig.height=5, fig.width=9}
 # 9 Survived and Ticket Counts
 ticketcounts <- factor(train$TicketCount)
 ggplot(data=train) +
@@ -898,7 +927,7 @@ The plot shows how how groups of 3 survived best, followed by 2, 4, 1, and other
 
 
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # 10 Survived & Fare
 plot(train$SurvivedNum~train$FarePerPerson, pch=19, col=rgb(0,0,.6,.2),
     main="Titanic Survival by Fare",ylab="Probability of Survival", xlab="Fare (Pounds Sterling)")
@@ -913,7 +942,7 @@ legend(120,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 Unlike the plot of Survival by Age below, we observe extreme probabilities given the skewed distribution of fares, which demonstrate how survival is increasingly more probable the higher the fare. Since the linear model is not a good approximation, we can explore the logged fares which could be used in a multivariate linear model. The fit is much better as evidenced by the plot below.
 
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # 10 Survived & Log(Fare)
 plot(train$SurvivedNum~train$FarePerPersonLog, pch=19, col=rgb(0,0,.6,.2),
     main="Titanic Survival by Log of Fare",
@@ -932,7 +961,7 @@ legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 ### 11 Survived and Age
 
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # 11 Survived & Age
 plot(train$SurvivedNum~train$AgeNum, pch=19, col=rgb(0,0,.6,.2),
     main="Titanic Survival by Age",ylab="Probability of Survival", xlab="Age")
@@ -948,7 +977,7 @@ legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 The probability of survival declines with age, and since the probabilities observed are not extreme (survival was not rare and the distribution of age is near normal) the linear fit almost coincides with the logistic (sinusoidal) fit. Another way to visualize this is to plot the two categorical versions of these two same variables.
 
 
-```{r fig.height=5, fig.width=8.5, echo=FALSE}
+```{r fig.height=5, fig.width=8.5}
 # 11 Survived & Age as Factor
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, AgeFac),fill=SurvivedFac)) +
@@ -1111,7 +1140,7 @@ Too detailed patterns, such as how the only clear cut gender/survival division h
 # Conclusion {#conclusion-link}
 
 
-One could keep exploring multivariate combinations of features ad nausem, but I for once am looking forward to building machine-learning models in Python and trying out some predictions. 
+While one might be tempted to keep exploring multivariate combinations of features ad nausem, it would be more useful and agile to start building ML models and trying out some predictions and come back to EDA later, if necessary.
 
 Some of the patterns we uncovered during this exploration might be helpful when **feature engineering** during **modeling pre-processing**, which I will be doing in a Jupyter Notebook in Python.
 
