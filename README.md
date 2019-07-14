@@ -8,6 +8,8 @@ The goals of this repository are:
 4. Predict Survival in the Titanic disaster using Kaggle's Titanic test set and the custom Python ML pipeline.
 
 To Do:
-* Link Contents to sections
-* Write Summary
-* Finish Multivariate EDA 
+* Write better Summary and Conclusion
+* Check pdf and html outputs: proofread!
+* Add more multivariate plots at will
+
+
