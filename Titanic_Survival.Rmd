@@ -1049,27 +1049,68 @@ In our training sample there are just two seemingly unaccompanied children, both
 Pursuing the ticket number one finds that the 11-yr old boy who died was indeed alone, accompanied by a 26-yr old young adult who survived, and the 5-yr old girl was accompanied by her nursemaid (both survived). Pursuing ticket numbers and stories does not scale well, it exemplifies how assumptions are often flawed.
 
 
-## How does class and age relate to survivability?
+## How does age, passenger class and gender relate to survivability?
 
-Do children in third class survive worse than adults in first class?
+One motivating question could be: 
 
-```{r fig.height=5, fig.width=9}
-# Survival by Age and Class
-ggplot(data=train) +
-   geom_bar(aes(x=SurvivedFac,y=PclassFac, fill=AgeFac), stat="identity") +
-   facet_wrap(aes(PclassFac))+
-   labs(x='Survived', y='Count', 
-   title='Titanic Survival by Age and Passenger Class')
+* Do children in third class survive worse than adults in first class?
 
+Below are five panel plots, one for each age group, split by class (the panels), survival (bars) and gender (color within bars). Comparing the percentages of 3rd class children (about 41%) and teens especially (about 25%) who survived to 
+
+
+
+
+```{r fig.height=4, fig.width=9}
+# Survival of Children by Class and Gender
+ggplot(data=train[train$AgeFac=="Child",]) +
+   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
+   facet_wrap(aes(PclassNum))+
+   labs(x='Survived', y='', 
+   title='Survival of Children by Class and Gender')
+```
+
+```{r fig.height=4, fig.width=9}
+# Survival of Teens by Class and Gender
+ggplot(data=train[train$AgeFac=="Teen",]) +
+   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
+   facet_wrap(aes(PclassNum))+
+   labs(x='Survived', y='', 
+   title='Survival of Teens by Class and Gender')
+```
+
+```{r fig.height=4, fig.width=9}
+# Survival of Young Adults by Class and Gender
+ggplot(data=train[train$AgeFac=="YoungAdult",]) +
+   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
+   facet_wrap(aes(PclassNum))+
+   labs(x='Survived', y='', 
+   title='Survival of Young Adults by Class and Gender')
 ```
 
 
+```{r fig.height=4, fig.width=9}
+# Survival of Middle Aged Adults by Class and Gender
+ggplot(data=train[train$AgeFac=="MiddleAged",]) +
+   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
+   facet_wrap(aes(PclassNum))+
+   labs(x='Survived', y='', 
+   title='Survival of Middle Aged Adults by Class and Gender')
+```
 
-[FIX: not a great plot, use percentages, isolate age groups]
-
+```{r fig.height=4, fig.width=9}
+# Survival of the Elderly by Class and Gender
+ggplot(data=train[train$AgeFac=="Elderly",]) +
+   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
+   facet_wrap(aes(PclassNum))+
+   labs(x='Survived', y='', 
+   title='Survival of the Elderly by Class and Gender')
+```
 
 
 # Conclusion {#conclusion-link}
+
+
+
 
 ---
 
