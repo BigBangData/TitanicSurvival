@@ -16,23 +16,24 @@ knitr::opts_chunk$set(echo = TRUE)
 
 # Contents
  
-* Summary
-* Preliminary EDA
-* Pre-Processing 1: PassengerId, Survived, Pclass
-* Pre-Processing 2: Name, Sex
-* Pre-Processing 3: SibSp, Parch
-* Pre-Processing 4: Ticket, Fare
-* Pre-Processing 5: Cabin, Embarked
-* Pre-Processing 6: Age
-* Univariate Graphical EDA
-* Bivariate Graphical EDA
-* Multivariate Graphical EDA
-* Conclusion
+* [Summary](#summary-link) 
+* [Preliminary EDA](#prelimEDA-link)
+* [Pre-Processing 1: PassengerId, Survived, Pclass](#preprocess1-link)
+* [Pre-Processing 2: Name, Sex](#preprocess2-link)
+* [Pre-Processing 3: SibSp, Parch](#preprocess3-link)
+* [Pre-Processing 4: Ticket, Fare](#preprocess4-link)
+* [Pre-Processing 5: Cabin, Embarked](#preprocess5-link)
+* [Pre-Processing 6: Age](#preprocess6-link)
+* [Summary After Pre-Processing](#postsummary-link)
+* [Univariate Graphical EDA](#unigraphEDA-link)
+* [Bivariate Graphical EDA](#bigraphEDA-link)
+* [Multivariate Graphical EDA](#multigraphEDA-link)
+* [Conclusion](#conclusion-link)
 
 
 ---
 
-# Summary
+# Summary {#summary-link}
 
 ## Motivation
 
@@ -53,7 +54,7 @@ In the **Contents** we can see how **Part 1** is divided into several sections. 
 
 ---
 
-# Preliminary EDA
+# Preliminary EDA {#prelimEDA-link}
 
 First we load the training data and look at its structure, summary, top and bottom rows. We will not look at the test data until it is time to test; failing to do so would consist in *data snooping*. In the spirit of the Titanic Kaggle kernel, I added the Kaggle Titanic datasets a level up on an `input/` directory. 
 
@@ -104,7 +105,7 @@ tail(train)
 
 ---
 
-# Pre-Processing 1: PassengerId, Survived, Pclass
+# Pre-Processing 1: PassengerId, Survived, Pclass {#preprocess1-link}
 
 
 ## PassengerId
@@ -151,7 +152,7 @@ train$Pclass <- NULL
 
 ---
 
-# Pre-Processing 2: Name, Sex
+# Pre-Processing 2: Name, Sex {#preprocess2-link}
 
 The `Name` attribute is not indicative of a person's survival, yet information can be extracted from it such as titles and name lengths, which might contain some predictive power. 
 
@@ -229,7 +230,7 @@ train$Sex <- NULL # drop original
 
 ---
 
-# Pre-Processing 3: SibSp, Parch
+# Pre-Processing 3: SibSp, Parch {#preprocess3-link}
 
 We conveniently rename `SibSp` and `Parch` to `SiblingSpouse` and `ParentChildren` and create a variable that is a sum of the two: `NumRelatives`. 
 
@@ -249,7 +250,7 @@ train$Parch <- NULL
 
 ---
 
-# Pre-Processing 4: Ticket, Fare
+# Pre-Processing 4: Ticket, Fare {#preprocess4-link}
 
 ## Ticket
 
@@ -323,7 +324,7 @@ names(train)
 ---
 
 
-# Pre-Processing 5: Cabin, Embarked
+# Pre-Processing 5: Cabin, Embarked {#preprocess5-link}
 
 
 ## Cabin
@@ -370,7 +371,7 @@ train$Embarked <- factor(train$Embarked) # re-factoring
 
 ---
 
-# Pre-Processing 6: Age
+# Pre-Processing 6: Age {#preprocess6-link}
 
 
 ## Imputing Missing Values
@@ -531,7 +532,7 @@ train$Age <- NULL
 ---
 
 
-## Summary after pre-processing
+# Summary After Pre-Processing {#postsummary-link}
 
 First we reorder a bit the variables.
 
@@ -544,7 +545,7 @@ head(train)
 ```
 
 ```{r}
-# Summary after pre-processing
+# Summary After Pre-Processing
 summary(train)
 ```
 
@@ -556,7 +557,7 @@ Class representation in `Cabin` is trouble free although there are a lot of NAs.
 
 ---
 
-# Univariate Graphical EDA 
+# Univariate Graphical EDA {#unigraphEDA-link}
 
 Now that we have the data in a basic shape for graphical EDA, we can try understanding the underlying distributions and associations of this training set better, remembering that this is just a sample so our findings are not necessarily representative of the population (one hopes that the creators of the Titanic competition in Kaggle used proper random sampling techniques in splitting their train and test samples).
 
@@ -672,7 +673,7 @@ As noted earlier, the majority did not survive, but class imbalance is not a wor
 
 
 
-# Bivariate Graphical EDA 
+# Bivariate Graphical EDA {#bigraphEDA-link}
 
 
 Our variables are:
@@ -961,7 +962,7 @@ ggplot(data=train) +
 
 
 
-# Multivariate Graphical EDA
+# Multivariate Graphical EDA {#multigraphEDA-link}
 
 The higher-dimensional problem space of combinations with 11 variables is as follows:
 
@@ -1068,7 +1069,7 @@ ggplot(data=train) +
 
 
 
-
+# Conclusion {#conclusion-link}
 
 ---
 
