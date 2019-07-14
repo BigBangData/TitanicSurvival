@@ -2,17 +2,13 @@
 title: "Titanic Survival Part 1: EDA in R"
 author: "Marcelo Sanches"
 date: "July 4, 2019"
-output: html_document
+output: pdf_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r include=FALSE}
-#library(knitr)
-#purl("Titanic_Survival.Rmd", output = "survival.R")
-```     
 
 # Contents
  
@@ -1051,70 +1047,81 @@ Pursuing the ticket number one finds that the 11-yr old boy who died was indeed 
 
 ## How does age, passenger class and gender relate to survivability?
 
-One motivating question could be: 
+One motivating question could be: *"Do children in third class survive less than adults in first class?"*
 
-* Do children in third class survive worse than adults in first class?
+Below are thee panel plots, one for each passenger class, split by gender (panels), age group (bars) and survival (color). Patterns emerge:
 
-Below are five panel plots, one for each age group, split by class (the panels), survival (bars) and gender (color within bars). Comparing the percentages of 3rd class children (about 41%) and teens especially (about 25%) who survived to 
+* Men survived less
+* The higher the class number (the cheaper the fare), the more people died
+* This last statement is true even for children
 
+So it is true that children of third class survived less than adults in first class, except for males taken alone.  Note that the scale of the third class is much higher (400s) than that of the first two classes. 
+
+
+
+```{r fig.height=4, fig.width=9}
+# Survival of 1st Class Passengers by Gender and Age Group
+ggplot(data=train[train$PclassNum==1,]) +
+   geom_bar(aes(x=AgeFac,y=-(SurvivedNum-2), fill=SurvivedFac), stat="identity") +
+   facet_wrap(aes(GenderFac)) +
+   labs(x='', y='', 
+   title='Survival of 1st Class Passengers by Gender and Age Group') +
+   coord_flip()
+```
+
+```{r fig.height=4, fig.width=9}
+# Survival of 2nd Class Passengers by Gender and Age Group
+ggplot(data=train[train$PclassNum==2,]) +
+   geom_bar(aes(x=AgeFac,y=-(SurvivedNum-2), fill=SurvivedFac), stat="identity") +
+   facet_wrap(aes(GenderFac))+
+   labs(x='', y='', 
+   title='Survival of 2nd Class Passengers by Gender and Age Group') +
+   coord_flip()
+```
 
 
 
 ```{r fig.height=4, fig.width=9}
-# Survival of Children by Class and Gender
-ggplot(data=train[train$AgeFac=="Child",]) +
-   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
-   facet_wrap(aes(PclassNum))+
-   labs(x='Survived', y='', 
-   title='Survival of Children by Class and Gender')
-```
-
-```{r fig.height=4, fig.width=9}
-# Survival of Teens by Class and Gender
-ggplot(data=train[train$AgeFac=="Teen",]) +
-   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
-   facet_wrap(aes(PclassNum))+
-   labs(x='Survived', y='', 
-   title='Survival of Teens by Class and Gender')
-```
-
-```{r fig.height=4, fig.width=9}
-# Survival of Young Adults by Class and Gender
-ggplot(data=train[train$AgeFac=="YoungAdult",]) +
-   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
-   facet_wrap(aes(PclassNum))+
-   labs(x='Survived', y='', 
-   title='Survival of Young Adults by Class and Gender')
+# Survival of 3rd Class Passengers by Gender and Age Group
+ggplot(data=train[train$PclassNum==3,]) +
+   geom_bar(aes(x=AgeFac,y=-(SurvivedNum-2), fill=SurvivedFac), stat="identity") +
+   facet_wrap(aes(GenderFac))+
+   labs(x='', y='', 
+   title='Survival of 3rd Class Passengers by Gender and Age Group') +
+   coord_flip()
 ```
 
 
-```{r fig.height=4, fig.width=9}
-# Survival of Middle Aged Adults by Class and Gender
-ggplot(data=train[train$AgeFac=="MiddleAged",]) +
-   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
-   facet_wrap(aes(PclassNum))+
-   labs(x='Survived', y='', 
-   title='Survival of Middle Aged Adults by Class and Gender')
-```
 
-```{r fig.height=4, fig.width=9}
-# Survival of the Elderly by Class and Gender
-ggplot(data=train[train$AgeFac=="Elderly",]) +
-   geom_bar(aes(x=SurvivedFac,y=PclassNum, fill=GenderFac), stat="identity") +
-   facet_wrap(aes(PclassNum))+
-   labs(x='Survived', y='', 
-   title='Survival of the Elderly by Class and Gender')
-```
+
+If you were a male in the Titanic, the best chances of survival would be if you were:
+
+1. a child not in third class
+2. a first class young adult
+3. a first class middle aged adult
+
+The best chances for survival overall are if you were a female not in third class. 
+
+
+Too detailed patterns, such as how the only clear cut gender/survival division happened in the third class elderly age group, where all males died and all females survived, are probably not real insightful patterns but more due to random noise fluctuations in the sample.
+
+
 
 
 # Conclusion {#conclusion-link}
 
 
+One could keep exploring multivariate combinations of features ad nausem, but I for once am looking forward to building machine-learning models in Python and trying out some predictions. 
+
+Some of the patterns we uncovered during this exploration might be helpful when **feature engineering** during **modeling pre-processing**, which I will be doing in a Jupyter Notebook in Python.
 
 
 ---
 
 
-
+```{r include=FALSE}
+#library(knitr)
+#purl("Titanic_Survival.Rmd", output = "Rcode.R")
+``` 
 
 
