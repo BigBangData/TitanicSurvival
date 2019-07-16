@@ -1,5 +1,6 @@
 # Titanic Survival
 
+
 ## Goals
 
 1. Participate in the [Titanic Competition](https://www.kaggle.com/c/titanic) in Kaggle;
@@ -12,7 +13,7 @@
 
 ## Audience and Scope
 
-This project is intended to anyone willing to read any portion of it, for whatever reason. People that might benefit from the detailed code and comments are those learning R or Python, data analysis or machine learning, or how to participate in a Kaggle competition. For those willing to interact and suggest improvements, I welcome pull requests in the [TitanicSurvival GitHub repo](https://github.com/BigBangData/TitanicSurvival).
+This project is intended to anyone willing to read any portion of it, for whatever reason. People that might benefit from the detailed code and comments are those learning R or Python, data analysis or machine learning, or how to participate in a Kaggle competition. For those willing to interact and suggest improvements, I welcome pull requests. 
 
 The **scope** of this project is limited: however detailed, I am just capturing a slice in an iterative, continuous process. An often used terminology, the "data science pipeline" is a bit of a misnomer. Each phase of this so-called pipeline is an epicycle within a larger cycle, and all phases are connected. It is helpful to separate the entire effort into discrete phases:  
 
@@ -73,7 +74,7 @@ Since the value of machine learning algorithms lies in predicting on new data, m
 
 ## Project Parts
 
-In **Part 1** of the Titanic Survival project I conduct **Exploratory Data Analisys (EDA)** of the [Kaggle Titanic train dataset](https://www.kaggle.com/c/titanic/data) in R, creating an **RMarkdown report** with RStudio and the `knitr` package, with summary tables and visualizations, performing minor pre-processing as needed. 
+In **Part 1** of the Titanic Survival project I conduct **Exploratory Data Analisys (EDA)** of the [Kaggle Titanic train dataset](https://www.kaggle.com/c/titanic/data) in R, creating an **RMarkdown report** with RStudio and the `knitr` package, with summary tables and visualizations, performing minor pre-processing as needed. This report can be found in [Rpubs](http://rpubs.com/BigBangData/512981) or as an html file in this repo. 
 
 In **Part 2** of the project I perform all the necessary pre-processing steps for **machine learning models**, conduct **model evaluation and regularization**, and run predictions using Python in a **Jupyter Notebook**. Given a final model, I run a **single pipeline** for **pre-processing and modeling** that emulates a **production environment**, where the Titanic test set is used as if it were future data never before seen.
 
