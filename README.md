@@ -1,5 +1,6 @@
 # Titanic Survival
 
+* NB: the information below is extracted from the Overview in Part 1 of the project.
 
 ## Goals
 
@@ -81,4 +82,4 @@ In **Part 2** of the project I perform all the necessary pre-processing steps fo
 
 ---
 
-Marcelo Sanches July 16, 2019
+Marcelo Sanches - July 16, 2019
