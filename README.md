@@ -7,9 +7,6 @@ The goals of this repository are:
 3. Create an end-to-end ML pipeline in Python using cross-validation for model selection, regularization, and hyperparameter tuning;
 4. Predict Survival in the Titanic disaster using Kaggle's Titanic test set and the custom Python ML pipeline.
 
-To Do:
-* Get feedback
-* Redo Conclusion: should be a summary of findings
-* Publish in Rpubs
+
 
 

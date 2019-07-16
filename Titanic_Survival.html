@@ -195,7 +195,7 @@ $(document).ready(function () {
 <div id="contents" class="section level1">
 <h1>Contents</h1>
 <ul>
-<li><a href="#overview-link">Overview of the Project</a></li>
+<li><a href="#overview-link">Overview</a></li>
 <li><a href="#prelimEDA-link">Preliminary EDA</a></li>
 <li><a href="#preprocess1-link">Pre-Processing 1: PassengerId, Survived, Pclass</a></li>
 <li><a href="#preprocess2-link">Pre-Processing 2: Name, Sex</a></li>
@@ -212,7 +212,7 @@ $(document).ready(function () {
 <hr />
 </div>
 <div id="overview-link" class="section level1">
-<h1>Overview of the Project</h1>
+<h1>Overview</h1>
 <div id="goals" class="section level2">
 <h2>Goals</h2>
 <ol style="list-style-type: decimal">
@@ -226,35 +226,33 @@ $(document).ready(function () {
 </div>
 <div id="titanic-competition" class="section level2">
 <h2>Titanic Competition</h2>
-<p>Kaggle is a platform for data science, hosting data, competitions and more. The Titanic Competition is designed as an introduction to Kaggle competitions, machine-learning, or both. Here is a description from Kaggle:</p>
-<blockquote>
-<p>The sinking of the RMS Titanic is one of the most infamous shipwrecks in history. On April 15, 1912, during her maiden voyage, the Titanic sank after colliding with an iceberg, killing 1502 out of 2224 passengers and crew. This sensational tragedy shocked the international community and led to better safety regulations for ships.</p>
-</blockquote>
-<blockquote>
-<p>One of the reasons that the shipwreck led to such loss of life was that there were not enough lifeboats for the passengers and crew. Although there was some element of luck involved in surviving the sinking, some groups of people were more likely to survive than others, such as women, children, and the upper-class.</p>
-</blockquote>
-<blockquote>
-<p>In this challenge, we ask you to complete the analysis of what sorts of people were likely to survive. In particular, we ask you to apply the tools of machine learning to predict which passengers survived the tragedy.</p>
-</blockquote>
+<p>Kaggle is a platform for data science, hosting data, competitions and more. The Titanic Competition is designed as an introduction to Kaggle competitions, machine-learning, or both. In the Titanic disaster, 1502 people died and 722 survived. The baseline survival rate therefore is 32.46%.</p>
+<p>In the competition, we are given a training dataset with labels (“Survived”: 1,0 where 1 represents survival) and a test dataset to predict on, with the same features (columns, or attributes) as the training set, but no label. The hypothesis is that passenger characteristics such as gender, age, and so forth, carry information that has predictive power for the outcome. This hypothesis is valid, yet only to a certain degree (more on this below).</p>
+<p>Since the test set has 418 rows, we are not being asked to predict every passenger’s outcome, but just the outcome of 418 passengers, or rather, we predict the survival of about 136 people. One simple way to predict survival is just observe attributes in which a majority survived, such as ‘women’, ‘children’, and the ‘upper class’ (i.e. 1st class passengers), and predict survival for them, and not for the other categories.</p>
+<p>In this project, I will explore the data, create some informal hypotheses to help modeling, build models from simple baselines to ever more complex ones, evaluating them on their accuracy, and implement a production-ready pipeline to deploy the the most accurate model.</p>
 </div>
 <div id="exploratory-data-analysis-and-r" class="section level2">
 <h2>Exploratory Data Analysis and R</h2>
-<p>In Exploratory Data Analysis we use summary tables and plots (data visualizations) to explore various facets of data. An excellent tool for this type of work is R programming and RStudio, the open-source IDE for R. With RStudio we can weave code and text using RMarkdown and a package called knitr, creating a reproducible report: given the data, the code, and R or RStudio, anyone can reproduce a report’s analysis.</p>
-<p>This can all be done using Python and Jupyter Notebooks, or a variety of proprietary tools. While there are many <strong>R vs Python</strong> blogs detailing the virtues of each language, in my current understanding and skill level, I believe R and RStudio to be superior when conducting quick exploratory plots, if only because one can interactively print to the console in R, but also because its base plotting function <code>plot()</code> will take almost any type of data and produce some kind of result. R was developed “by statisticians, for statisticians” and comes with many built-in statistical properties, not requiring any extra module or library.</p>
-<p>In this report, I use the famous <code>ggplot2</code> package by Hadley Wickham as well, since it has many graphical features, which perhaps goes a bit beyond quick and dirty plotting for EDA, but also aim at reporting.</p>
+<p>Through summaries and plots, we explore the various distributions and potential associations of variables in the data, so we can better understand it and build better machine-learning models.</p>
+<p>I decided to use R and RStudio because they lend themselves well for this kind of work. The <code>plot()</code> function in R will take almost any type of data structure and try to plot it. R has an interactive console so one can quickly type one liners or copy/paste a few lines and get immediate results. R was written by statisticians and much of the necessary functionality for statistics is built into it.</p>
+<p>In RStudio, we can create an RMarkdown report and weave text and code using the <code>knitr</code> package. Output formats include html (this page) and pdf.</p>
+<p>In this report, I go a bit beyond simple plots and use the <code>ggplot2</code> package, but I am not aiming for the most polished plots since this is just data exploration.</p>
 </div>
 <div id="machine-learning-and-python" class="section level2">
 <h2>Machine Learning and Python</h2>
-<p>This project is also my response to Exercise 3 at the end of Chapter 3 of Aurelien Geron’s book <a href="https://github.com/ageron/handson-ml">Hands-On Machine Learning with Scikit-Learn and TensorFlow</a>, an excellent resource to anyone delving into the world of machine learning and data science. The book concentrates on implementations of machine learning using Python, a general-purpose language that has a much wider audience and reach, compared to R. Having arrived a bit later than R into data science, Python’s modules for machine learning are perhaps better built. In contrast to the ad hoc development of a variety of packages that have different syntax and implementations, Python’s modules for machine learning are a self-contained universe for data science, able to easily implement production-ready coding pipeline that clean, model, and predict.</p>
-<p>In the Titanic Competition, the goal is to predict who survived the tragedy. There are two data sets, a train set and a test set, already split by Kaggle for us. Normally we would split them ourselves using simple random sampling or stratified sampling, balancing out proportions and representability of not only the outcome but also of important predictors. In this case, we trust that Kaggle did that work for us, and it has to be so, otherwise different competitors would be predicting different data and results could not be compared.</p>
-<p>The train set has a label, the outcome variable (survived or not) on which we conduct our supervised machine learning task, and train our algorithms to detect survival. The test set has no such label, it is our task to provide that label (the prediction). Kaggle evaluates these predictions against the truth and gives us a score. . Classification and accuracy</p>
-<p>This type of task (predicting on a binary outcome) is called a classification task, and the machine-learning algorithm we build is called a classifier. This classifier needs to be evaluated according to some performance metric. A common and intuitive performance metric, and the one we are aiming for, is called <em>accuracy</em>, which is the number of times we predict the correct outcome (survived, or not) over all the predictions we made. There are many measures of performance that could be chosen: a data analyst carefully chooses a metric, given a problem. PR (precision-recall) curves and ROC graphs (true positive rate vs. false positive rate) are often more informative in business settings where one has to weigh cost benefits of various potential implementations of a machine-learning solution. Classification performance metrics stem from different ways to consider and partition the <a href="https://en.wikipedia.org/wiki/Confusion_matrix">confusion matrix</a>.</p>
+<p>This project is also my response to Exercise 3 at the end of Chapter 3 of Aurelien Geron’s book <a href="https://github.com/ageron/handson-ml">Hands-On Machine Learning with Scikit-Learn and TensorFlow</a>, an excellent resource to anyone delving into the world of machine learning and data science. The book concentrates on implementations of machine learning using Python, whose modules are a self-contained universe for data science, able to easily implement production-ready coding pipeline that clean, model, and predict.</p>
+<p>In the Titanic Competition, the goal is to predict who survived the tragedy in the test data. Kaggle split the data for competitors to ensure comparable scores. The ML algorithm is built and evaluated on the train set, which has labels (the outcome variable - Survived or Not), and we submit the labels for the test set. Kaggle evaluates these predictions based on their <em>accuracy</em>.</p>
+<ul>
+<li>Classification and Accuracy</li>
+</ul>
+<p>Predicting a binary outcome is a classification task. Classifiers (models that classify) are evaluated using some kind of performance metric which stems from a way to partition the <a href="https://en.wikipedia.org/wiki/Confusion_matrix">confusion matrix</a>. One can use the entire matrix itself or consider the problem space of all matrices (PR and ROC curves), but that goes beyond the scope of the titanic competition.</p>
+<p><em>Accuracy</em> is defined as the number of times we predict the correct outcome, whether positive or negative (survived, or not) over all the predictions we made.</p>
 </div>
 <div id="making-sense-of-the-titanic-competition" class="section level2">
 <h2>Making sense of the Titanic Competition</h2>
-<p>This competition is purely for learning and based on an honor code of not looking up results in the historical record, which many participants fail to observe as there are numerous “perfect scores,” implying a fair amount of cheating. As a side note, it makes no particular sense to predict survival in the Titanic, except perhaps as a socio-economic or psychological study. The reason I say that a perfect score almost certainly implies cheating is that, as far as I can tell from experience and research online (of too numerous sources to cite), there is an amount of irreducible error in this survival prediction task, given the training data. This means that there is a limit to the amount of information we can extract from the data, in order to predict survivability, and it is well below 100%.</p>
-<p>The <strong>drive for highest accuracy</strong> that this Kaggle competition encourages is not necessarily a worthy goal. Most beginners in data science will be seduced by the highest score (higher accuracy) yet most algorithms that produce the highest scores (gbm, xgboost, and the like) are also well-known for overfitting. This fact, coupled with the ability to submit many predictions for the same test set, lead to the conclusion that many of the scores seen in the Titanic competition are overfitting the test set, in other words, they do not generalize to new data. Of course there is no new data, because this particular prediction has little value in a business setting, we are not going to try to inform future Titanic passengers of how to improve their chances of surviving, so it doesn’t actually matter, but it would matter if you were a serious machine-learning specialist working on a realistic project that would take on new data.</p>
-<p>My approach will be to use this introductory competition to understand the data, and emulate a production environment with pipelines in Python that clean, model, and predict on the test set in what hopefully is a robust, generalizable manner.</p>
+<p>This competition is purely for learning and based on an honor code of not looking up results in the historical record, which many participants fail to observe as there are numerous perfect prediction scores. Perfect prediction is not possible, there is an amount of <strong>irreducible error</strong> in the data, meaning, there is a limit to the amount of information we can extract from the data, in order to predict survivability. This limit is debatable and the subject of many discussions online.</p>
+<p>Driving for the <strong>highest accuracy</strong> is not necessarily a worthy goal. Many ML models that consistently win competitions and produce the highest scores (gbm, xgboost, and the like) are also well-known for <strong>overfitting</strong> the data. This, coupled with the ability to submit many predictions for the same test set, lead to overfitting the test set, in other words, the machine algorithms are tailored to predict a particular test set and not new data.</p>
+<p>Since the value of machine learning algorithms lies in predicting on new data, my approach will be to use this competition to understand the data, and aim toward building a robust and generalizable machine-learning algorithm, emulating a production environment of sorts, with pipelines in Python that clean, model, and predict all at once.</p>
 </div>
 <div id="project-parts" class="section level2">
 <h2>Project Parts</h2>
