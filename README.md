@@ -9,5 +9,7 @@ The goals of this repository are:
 
 To Do:
 * Get feedback
+* Redo Conclusion: should be a summary of findings
+* Publish in Rpubs
 
 
