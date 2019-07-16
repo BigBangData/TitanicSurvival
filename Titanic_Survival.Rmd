@@ -38,18 +38,35 @@ knitr::opts_chunk$set(echo = TRUE)
 3. Create **Reproducible RMarkdown** files and **PDF or HTML reports**, weaving code and comments using **RStudio** and **knitr**;
 4. Predict survival in the Titanic, evaluating various **machine-learning** algorithms using **Python**;
 5. Emulate **production-ready code**, treating the test set as "future data";
-6. Clean, model, and predict using a **single pipeline approach** using **Jupyter Notebook**.
+6. Clean, model, and predict using a **single pipeline approach** using **Jupyter Notebook**;
+7. Share the process in **Rpubs** and **GitHub** and get feedback.
+
+## Audience and Scope
+
+This project is intended to anyone willing to read any portion of it, for whatever reason. People that might benefit from the detailed code and comments are those learning R or Python, data analysis or machine learning, or how to participate in a Kaggle competition. For those willing to interact and suggest improvements, I welcome pull requests in the [TitanicSurvival GitHub repo](https://github.com/BigBangData/TitanicSurvival).
+
+The **scope** of this project is limited: however detailed, I am just capturing a slice in an iterative, continuous process. An often used terminology, the "data science pipeline" is a bit of a misnomer. Each phase of this so-called pipeline is an epicycle within a larger cycle, and all phases are connected. It is helpful to separate the entire effort into discrete phases:  
+
+1. [re]defining a question
+2. business understanding 
+3. exploratory data pre-processing and analysis
+4. model building and evaluation
+5. model deployment
+
+Yet each of these parts depends on and is enlightened by the other parts. With deployment comes better business understanding and more data, which can redefine the original question, generating new explorations and models, and so forth. After a first wave of EDA, the second wave is enlightened by the first. After EDA, a much better question and business understanding might ensue. 
+
+In short, publishing results of an exploratory data analysis simply captures a frame in an ongoing movie. 
 
 
 ## Titanic Competition
 
-Kaggle is a platform for data science, hosting data, competitions and more. The Titanic Competition is designed as an introduction to Kaggle competitions, machine-learning, or both. In the Titanic disaster, 1502 people died and 722 survived. The baseline survival rate therefore is 32.46%.
+**Kaggle** is a platform for **data science**, hosting data, competitions and more. The Titanic Competition is designed as an introduction to Kaggle competitions, machine-learning, or both. For an introduction to the competition, visit [Kaggle](https://www.kaggle.com/c/titanic).
 
-In the competition, we are given a training dataset with labels ("Survived": 1,0 where 1 represents survival) and a test dataset to predict on, with the same features (columns, or attributes) as the training set, but no label. The hypothesis is that passenger characteristics such as gender, age, and so forth, carry information that has predictive power for the outcome. This hypothesis is valid, yet only to a certain degree (more on this below).
+In the Titanic disaster, 1502 people died and 722 survived. The baseline survival rate therefore is 32.46%. In the competition, we are given a training dataset with labels (survived or not) and a test dataset to predict on, with the same features (attributes) but no label. The hypothesis is that passenger characteristics carry information that has predictive power for the outcome. This hypothesis is valid, yet only to a certain degree (more on this below).
 
-Since the test set has 418 rows, we are not being asked to predict every passenger's outcome, but just the outcome of 418 passengers, or rather, we predict the survival of about 136 people. One simple way to predict survival is just observe attributes in which a majority survived, such as 'women', 'children', and the 'upper class' (i.e. 1st class passengers), and predict survival for them, and not for the other categories.
+Since the test set has 418 rows, we are not being asked to predict every passenger's outcome, but just the outcome of 418 passengers, or rather, we predict the survival of about 136 people. One simple way to predict survival is to note attributes in which a majority survived, such as 'women', 'children', and the 'upper class' (i.e. 1st class passengers, or those with high fares), and predict these individuals to survive. This could be thought of as a baseline model whose performance we can improve on with machine learning.
 
-In this project, I will explore the data, create some informal hypotheses to help modeling, build models from simple baselines to ever more complex ones, evaluating them on their accuracy, and implement a production-ready pipeline to deploy the the most accurate model.
+In this project, I will explore the data, create informal hypotheses to help modeling, build machine-learning models of various complexities, evaluating them on their accuracy and generalization, and implement a production-ready pipeline to deploy the the most accurate and generalizable model.
 
 
 
@@ -762,7 +779,9 @@ plot(train[,colnames(train) %in% chosen])
 
 
 
-Numerical attributes like `Age` and `Fare` combine well into a scatterplot, yet other attributes are not plotted exactly as we might want. Since the problem space will only increase with higher-dimensional combinations, we select only a few choice pairs to consider. One approach is to compare each of the other eleven features with our `Survived` outcome.
+Numerical attributes like `Age` and `Fare` combine well into a scatterplot, yet other attributes are not plotted exactly as we might want. Since the problem space will only increase with higher-dimensional combinations, we select only a few choice pairs to consider. One approach is to compare each of the other eleven features with our `Survived` outcome. 
+
+We can also compute the Pearson product-moment correlation coefficient, which is a measure of the strength of the **linear relationship** (which is why I will refer to it as the **linear correlation coefficient** from now on) between two variables, when we have two numerical variables. 
 
 
 ## Bivariate Associations with Survival
@@ -839,8 +858,10 @@ ggplot(data=train) +
 
 Not surprisingly, passenger's class was taken into account when getting the the life boats, so people in third class took the brunt of it, and first class folks had it best. What the mosaic plot also shows is the proportions of these classes in our sample, which we hope are somewhat generalizable.
 
+The linear correlation coefficient shows this negative association with higher class numbers:
+
 ```{r}
-names(train)
+cor(train$SurvivedNum,train$PclassNum)
 ```
 
 
@@ -859,9 +880,13 @@ curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=
 legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 ```
 
-Longer names appear to have some association with higher probabilities of survival so we keep this feature. It might just be capturing the association of longer names and wealth, but since in machine learning we do not care about multicollinearity issues, we will test whether to keep this attribute or not during our feature selection modeling phase. The linear fit capture most of the distribution, only failing on a couple outlying cases.
+Longer names appear to have an association with higher probabilities of survival so we keep this feature. It might just be capturing the association of longer names and wealth, but since in machine learning we do not care about multicollinearity issues, we will test whether to keep this attribute or not during our feature selection modeling phase. The linear fit capture most of the distribution, only failing on a couple outlying cases.
 
+The linear correlation coefficient shows this positive association:
 
+```{r}
+cor(train$SurvivedNum,train$NameLength)
+```
 
 ### 5 Survived and Title
 
@@ -888,7 +913,12 @@ ggplot(data=train) +
    labs(x='Sex', y='', title='Titanic Survival by Gender')
 ```
 
-Females were much more likely to survive, and most of the passengers were male.
+Females were much more likely to survive, and most of the passengers were male. The linear correlation coefficient shows this tendency (negative correlation for males):
+
+
+```{r}
+cor(train$SurvivedNum,train$IsMale)
+```
 
 
 ### 7 Survived and Sibling/Spouse
@@ -932,7 +962,11 @@ ggplot(data=train) +
 
 It would seem as though survivability increases from 0 to 3 relatives then suddenly besomes worse, a curious and possibly suspect insight we might consider during **feature engineering** for machine learning.
 
+Because the relationship seems to be nonlinear, the linear correlation coefficient is small:
 
+```{r}
+cor(train$SurvivedNum,as.numeric(train$NumRelatives))
+```
 
 ### 9 Survived and Ticket Counts
 
@@ -951,7 +985,12 @@ ggplot(data=train) +
 
 The plot shows how how groups of 3 survived best, followed by 2, 4, 1, and other groups are perhaps too unrepresented for a solid interpretation. It is worth exploring in multivariate EDA whether men survived more in groups or alone, or children, and of what classes.
 
+The relationship between survival and groups of people that bought the same ticket appears to be nonlinear, which is why the linear correlation coefficient has a low value.
 
+
+```{r}
+cor(train$SurvivedNum,train$TicketCount)
+```
 
 ### 10 Survived and Fare Per Person
 
@@ -984,7 +1023,12 @@ curve(predict(g,data.frame(FarePerPersonLog=x),type="resp"),col="red",lty=2,lwd=
 legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 ```
 
+By computing the linear correlation coefficient for both variables, we see an improvement in the strength of the linear relationship when we use the logged version of fare:
 
+```{r}
+cor(train$SurvivedNum,train$FarePerPerson)
+cor(train$SurvivedNum,train$FarePerPersonLog)
+```
 
 
 
@@ -1002,9 +1046,13 @@ curve(predict(g,data.frame(AgeNum=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE
 legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 ```
 
+The linear correlation coefficient shows this mild negative association with age:
 
+```{r}
+cor(train$SurvivedNum,train$AgeNum)
+```
 
-The probability of survival declines with age, and since the probabilities observed are not extreme (survival was not rare and the distribution of age is near normal) the linear fit almost coincides with the logistic (sinusoidal) fit. Another way to visualize this is to plot the two categorical versions of these two same variables.
+We see some evidence in the training sample that the probability of survival declines with age, and since the probabilities observed are not extreme (survival was not rare and the distribution of age is near normal) the linear fit almost coincides with the logistic (sinusoidal) fit. Another way to visualize this is to plot the two categorical versions of these two same variables.
 
 
 ```{r fig.height=5, fig.width=8.5}
@@ -1013,7 +1061,6 @@ ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, AgeFac),fill=SurvivedFac)) +
    labs(x='Age Group', y='', title='Titanic Survival by Age Group')
 ```
-
 
 
 
@@ -1170,9 +1217,44 @@ Too detailed patterns, such as how the only clear cut gender/survival division h
 # Conclusion {#conclusion-link}
 
 
-While one might be tempted to keep exploring multivariate combinations of features ad nausem, it would be more useful and agile to start building ML models and trying out some predictions and come back to EDA later, if necessary.
+While one might be tempted to keep exploring multivariate combinations of features ad nausem, it would be more useful and agile to start building machine-learning models and trying out some predictions and come back for further exploratory data analysis later, as per the iterative approach to data science described in the overview.
 
 Some of the patterns we uncovered during this exploration might be helpful when **feature engineering** during **modeling pre-processing**, which I will be doing in a Jupyter Notebook in Python.
+
+Here is a distilled summary of our data analysis process, a to-do list for the modeling phase:
+
+* keep `PassengerID` (need it for the competition submission file)
+* `Name`: extract titles with regex, create `Title` 
+* `Name`: extract length, create `NameLength` 
+* drop `Name`
+* create `NumRelatives`
+* create `TicketCount`
+* create `FarePerPerson` using `TicketCount`
+* drop `Fare`
+* drop `Ticket`
+* extract cabin letters from `Cabin` (regex)
+* impute two missing vals in `Embarked` with the majority class 
+* impute `Age` with a random forest model 
+
+Here is the number of **binary indicators (dummies)** that we will consider:
+
+* `Title`: 4 dummies
+* `Cabin`: 5 dummies 
+* `Embarked`: 2 dummies
+* `Sex`: 1 dummy
+* `Pclass`: 2 dummies
+* `Age`: numeric or 4 dummies
+
+Since the number of dummies is relatively small, we do not need to use *label embedding* or *binary encoding*.
+
+**Extra variables** we might consider creating depending on the model include:
+
+* `SingleFem`, `SingleMale`: since a confounder of Single is Gender 
+* `IsMaleMiddleAged`: or variants, including `Not1stClass`
+
+Modeling will inform us as to whether it helps at all to bundle characteristis into a single variable (and drop the originals) or whether the mix of original variabes already capture these characteristics enough. 
+
+We will also consider **scaling** depending on the modeling strategy.
 
 
 ---

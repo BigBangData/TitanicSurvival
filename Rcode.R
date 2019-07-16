@@ -368,7 +368,7 @@ ggplot(data=train) +
    labs(x='Passenger Class', y='', title='Titanic Survival by Passenger Class')
 
 ## ------------------------------------------------------------------------
-names(train)
+cor(train$SurvivedNum,train$PclassNum)
 
 ## ----fig.height=4.5, fig.width=8-----------------------------------------
 # 4 Survived and NameLength
@@ -380,6 +380,9 @@ abline(linmod, col="green", lwd=1, lty=2)
 g=glm(SurvivedNum~NameLength,family='binomial',data=train)
 curve(predict(g,data.frame(NameLength=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
 legend(60,0.5,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+
+## ------------------------------------------------------------------------
+cor(train$SurvivedNum,train$NameLength)
 
 ## ----fig.height=5, fig.width=9-------------------------------------------
 # 5 Survival and Title
@@ -394,6 +397,9 @@ ggplot(data=train) +
 ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, GenderFac),fill=SurvivedFac)) +
    labs(x='Sex', y='', title='Titanic Survival by Gender')
+
+## ------------------------------------------------------------------------
+cor(train$SurvivedNum,train$IsMale)
 
 ## ----fig.height=5, fig.width=8.5-----------------------------------------
 # 7 Survived and Sibling/Spouse
@@ -416,6 +422,9 @@ ggplot(data=train) +
    labs(x='Number of Parents/Children', y='', 
    title='Titanic Survival by Number of Relatives')
 
+## ------------------------------------------------------------------------
+cor(train$SurvivedNum,as.numeric(train$NumRelatives))
+
 ## ----fig.height=5, fig.width=9-------------------------------------------
 # 9 Survived and Ticket Counts
 ticketcounts <- factor(train$TicketCount)
@@ -423,6 +432,9 @@ ggplot(data=train) +
    geom_mosaic(aes(x=product(SurvivedFac, ticketcounts),fill=SurvivedFac)) +
    labs(x='Number of People Per Ticket', y='', 
    title='Titanic Survival by Size of Groups Per Ticket')
+
+## ------------------------------------------------------------------------
+cor(train$SurvivedNum,train$TicketCount)
 
 ## ----fig.height=5, fig.width=8.5-----------------------------------------
 # 10 Survived & Fare
@@ -445,6 +457,10 @@ g=glm(SurvivedNum~FarePerPersonLog,family='binomial',data=train)
 curve(predict(g,data.frame(FarePerPersonLog=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
 legend(1,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
 
+## ------------------------------------------------------------------------
+cor(train$SurvivedNum,train$FarePerPerson)
+cor(train$SurvivedNum,train$FarePerPersonLog)
+
 ## ----fig.height=5, fig.width=8.5-----------------------------------------
 # 11 Survived & Age
 plot(train$SurvivedNum~train$AgeNum, pch=19, col=rgb(0,0,.6,.2),
@@ -454,6 +470,9 @@ abline(linmod, col="green", lwd=2, lty=2)
 g=glm(SurvivedNum~AgeNum,family='binomial',data=train)
 curve(predict(g,data.frame(AgeNum=x),type="resp"),col="red",lty=2,lwd=2,add=TRUE) 
 legend(60,0.7,c("linear fit","logistic fit"), col=c("green","red"), lty=c(1,2))
+
+## ------------------------------------------------------------------------
+cor(train$SurvivedNum,train$AgeNum)
 
 ## ----fig.height=5, fig.width=8.5-----------------------------------------
 # 11 Survived & Age as Factor
@@ -529,6 +548,7 @@ ggplot(data=train[train$PclassNum==3,]) +
    coord_flip()
 
 ## ----include=FALSE-------------------------------------------------------
+# uncomment to run, creates Rcode file with R code
 #library(knitr)
 #purl("Titanic_Survival.Rmd", output = "Rcode.R")
 
