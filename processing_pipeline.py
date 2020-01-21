@@ -158,3 +158,60 @@ def process_train(train):
     train_processed = train.to_numpy()
     
     return(train_processed)
+
+def process_test(test_data):
+    """Same as process_train except for one NaN value I had to impute again.
+    """
+
+    # Feature Engineering 
+    
+    test_data['Title'] = test_data['Name'].map(lambda x: extract_title(x))
+    test_data['NameLength'] = test_data['Name'].map(lambda x: len(x))
+    test_data['NumRelatives'] = test_data['SibSp'] + test_data['Parch']
+    
+    test_data['count'] = 1
+    group = test_data[['Ticket','Fare','count']].groupby('Ticket').sum()
+    group['Fare'] = group['Fare']/group['count']
+    group['FarePerPerson'] = group['Fare']/group['count']
+    test_data['FarePerPerson'] = test_data['Ticket'].map(lambda x: map_fare_perperson(x, group))
+    
+    test_data['Deck']=test_data['Cabin'].map(lambda x: clean_cabin(x), na_action='ignore')
+    test_data['Embarked']=test_data['Embarked'].fillna('S')
+    test_data['Age'] = test_data.groupby(['Sex', 'Pclass','Title'])['Age'].\
+                                     transform(lambda x: x.fillna(x.median()))
+    
+    test_data['Age'].fillna(test_data['Age'].mean(), inplace=True) # re-impute value
+    
+    # Dummies
+    
+    test_data['IsMale'] = pd.get_dummies(test_data['Sex'])['male']
+    test_data['Embarked_S']=pd.get_dummies(test_data['Embarked'])['S']
+    test_data['Embarked_Q']=pd.get_dummies(test_data['Embarked'])['Q']
+    test_data['Title_Mr']=pd.get_dummies(test_data['Title'])['Mr']
+    test_data['Title_Mrs']=pd.get_dummies(test_data['Title'])['Mrs']
+    test_data['Title_Miss']=pd.get_dummies(test_data['Title'])['Miss']
+    test_data['Pclass_1']=pd.get_dummies(test_data['Pclass'])[1]
+    test_data['Pclass_2']=pd.get_dummies(test_data['Pclass'])[2]
+    test_data['Deck'].fillna('other') # create a None category for NA values
+    test_data['Deck_A']=pd.get_dummies(test_data['Deck'])['A']
+    test_data['Deck_B']=pd.get_dummies(test_data['Deck'])['B']
+    test_data['Deck_C']=pd.get_dummies(test_data['Deck'])['C']
+    test_data['Deck_D']=pd.get_dummies(test_data['Deck'])['D']
+    test_data['Deck_E']=pd.get_dummies(test_data['Deck'])['E']
+    test_data['Deck_F']=pd.get_dummies(test_data['Deck'])['F']
+    
+    test_data.drop(['PassengerId', 'Pclass','Name','Sex','SibSp','Parch','Ticket','Fare',
+                'Cabin','count','Embarked','Title','Deck'], axis=1, inplace=True)
+    
+    # Scaling
+    
+    test_data['Age_minmax'] = minmax_scale(test_data['Age'])
+    test_data['NameLength_minmax'] = minmax_scale(test_data['NameLength'])
+    test_data['NumRelatives_minmax'] = minmax_scale(test_data['NumRelatives'])
+    test_data['FarePerPerson_minmax'] = minmax_scale(test_data['FarePerPerson'])
+    
+    test_data.drop(['Age', 'NameLength','FarePerPerson','NumRelatives'], axis=1, inplace=True)
+    
+    test_data = test_data.to_numpy()
+    
+    return(test_data)
